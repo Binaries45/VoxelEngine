@@ -2,6 +2,7 @@ const std = @import("std");
 
 /// returns a vector of size N containing elements of type T
 pub inline fn Vec(comptime N: comptime_int, comptime T: type) type {
+    if (N > 4) @compileError("Vectors cannot have length exceeding 4");
     // todo : ensure vector is made from int or float type
     return @Vector(N, T);
 }
@@ -32,6 +33,18 @@ pub fn cross(comptime T: type, a: Vec(3, T), b: Vec(3, T)) Vec(3, T) {
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
     };
+}
+
+/// returns info on the type of V if V is a vector type, otherwise returns null
+pub fn vecInfo(comptime V: type) std.builtin.Type.Vector {
+    const VI = @typeInfo(V);
+    if (VI != .vector) @compileError(@typeName(V) ++ " is not a vector type");
+    return VI.vector;
+}
+
+/// create a new vector from the given one by reordering or duplicating elements
+pub inline fn swizzle(v: anytype, comptime mask: [vecInfo(@TypeOf(v)).len]i32) @TypeOf(v) {
+    return @shuffle(vecInfo(@TypeOf(v)).child, v, undefined, mask);
 }
 
 // todo : write tests
@@ -68,4 +81,12 @@ test "cross product" {
     try std.testing.expect(@reduce(.And, c == Vec(3, f32) {0, 0, 1}));
 
     // todo : other tests
+}
+
+test "swizzle" {
+    const a = Vec(4, f32) {1, 2, 3, 4};
+    const xs = swizzle(a, .{0, 0, 0, 0});
+    const rev = swizzle(a, .{3, 2, 1, 0});
+    try std.testing.expect(@reduce(.And, xs == Vec(4, f32) {1, 1, 1, 1}));
+    try std.testing.expect(@reduce(.And, rev == Vec(4, f32) {4, 3, 2, 1}));
 }
