@@ -1,9 +1,10 @@
 const std = @import("std");
+const helpers = @import("helpers.zig");
 
 /// returns a vector of size N containing elements of type T
 pub inline fn Vec(comptime N: comptime_int, comptime T: type) type {
     if (N > 4) @compileError("Vectors cannot have length exceeding 4");
-    // todo : ensure vector is made from int or float type
+    if (!helpers.isScalar(T)) @compileError("Element type must be an integer or float");
     return @Vector(N, T);
 }
 
@@ -48,7 +49,7 @@ pub inline fn swizzle(v: anytype, comptime mask: [vecInfo(@TypeOf(v)).len]i32) @
 }
 
 // todo : write tests
-test "dot product" {
+test "vector dot product" {
     const a = Vec(3, i32) { 1, 0, 0 };
     const b = Vec(3, i32) { 0, 1, 0 };
     try std.testing.expect(dot(3, i32, a, b) == 0);
@@ -56,7 +57,7 @@ test "dot product" {
     // todo : other tests
 }
 
-test "magnitude" {
+test "vector magnitude" {
     const v1 = Vec(3, f32) {1, 0, 0};
     const m1 = magnitude(3, f32, v1);
     try std.testing.expect(m1 == 1.0);
@@ -66,7 +67,7 @@ test "magnitude" {
     try std.testing.expect(m2 == @sqrt(2.0));
 }
 
-test "normalize" {
+test "vector normalize" {
     const v1 = Vec(3, f32) {3, 0, 0};
     const n1 = normalize(3, f32, v1);
     try std.testing.expect(@reduce(.And, n1 == Vec(3, f32) {1, 0, 0}));
@@ -74,7 +75,7 @@ test "normalize" {
     // todo : other tests
 }
 
-test "cross product" {
+test "vector cross product" {
     const a = Vec(3, f32) {1, 0, 0};
     const b = Vec(3, f32) {0, 1, 0};
     const c = cross(f32, a, b);
@@ -83,7 +84,7 @@ test "cross product" {
     // todo : other tests
 }
 
-test "swizzle" {
+test "vector swizzle" {
     const a = Vec(4, f32) {1, 2, 3, 4};
     const xs = swizzle(a, .{0, 0, 0, 0});
     const rev = swizzle(a, .{3, 2, 1, 0});
