@@ -2,17 +2,33 @@
 pub const Vector = @import("math/Vector.zig");
 const Vec = Vector.Vec;
 
-pub const Vec2f = Vec(2, f32);
-pub const Vec3f = Vec(3, f32);
-pub const Vec4f = Vec(4, f32);
+pub const fVec2 = Vec(2, f32);
+pub const fVec3 = Vec(3, f32);
+pub const fVec4 = Vec(4, f32);
 
-pub const Vec2i = Vec(2, i32);
-pub const Vec3i = Vec(3, i32);
-pub const Vec4i = Vec(4, i32);
+pub const iVec2 = Vec(2, i32);
+pub const iVec3 = Vec(3, i32);
+pub const iVec4 = Vec(4, i32);
 
-// pub const Matrix = @import("math/Matrix.zig");
+pub const Matrix = @import("math/Matrix.zig");
+const Mat = Matrix.Mat;
+
+pub const fMat2 = Mat(2, 2, f32);
+pub const fMat3 = Mat(3, 3, f32);
+pub const fMat4 = Mat(4, 4, f32);
+
+pub const iMat2 = Mat(2, 2, i32);
+pub const iMat3 = Mat(3, 3, i32);
+pub const iMat4 = Mat(4, 4, i32);
+
+pub const Quaternion = @import("math/Quaternion.zig");
+const Quat = Quaternion.Quat;
+
+pub const iQuat = Quat(i32);
+pub const fQuat = Quat(f32);
 
 test "engine" {
     _ = Vector;
-    // _ = Matrix;
+    _ = Matrix;
+    _ = Quat;
 }
