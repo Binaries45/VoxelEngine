@@ -5,13 +5,8 @@
 //        type-erased so that we can then store all archetypes in our world
 
 const std = @import("std");
-pub const Archetype = @import("Archetype.zig");
-
-pub fn Object(comptime T: type) type {
-    // todo : implement this once we know how archetypes will be stored
-    _ = T;
-    return struct {};
-}
+pub const Archetype = @import("archetype.zig");
+pub const World = @import("World.zig");
 
 /// return a unique usize for the given type
 pub fn typeId(comptime T: type) usize {
@@ -19,10 +14,6 @@ pub fn typeId(comptime T: type) usize {
         pub const t: type = T;
         pub const id: u8 = 0;
     }.id);
-}
-
-test "object" {
-    _ = Archetype;
 }
 
 test "type ids" {
@@ -43,4 +34,13 @@ test "type ids" {
     // alias tests
     const Name = []const u8;
     try std.testing.expect(typeId(Name) == typeId([]const u8));
+
+    // generic type tests
+    try std.testing.expect(typeId(std.ArrayList(u32)) == typeId(std.ArrayList(u32)));
 }
+
+test "object" {
+    _ = Archetype;
+    _ = World;
+}
+
