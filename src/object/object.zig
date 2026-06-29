@@ -8,49 +8,18 @@ const std = @import("std");
 pub const Archetype = @import("archetype.zig");
 pub const World = @import("World.zig");
 
-/// return a unique usize for the given type
-// note : when id was const, optimizations would cause type ids to combine,
-// and when called from the key function would generate this assembly:
-// ```
-// example.key_test:
-//        push    rbp
-//        mov     rbp, rsp
-//        xor     eax, eax
-//        pop     rbp
-//        ret
-// ```
-// the `xor eax, eax` meant that the function was just returning 0,
-// but making id into a var caused the assembly to become:
-// ```
-// example.key_test:
-//        push    rbp
-//        mov     rbp, rsp
-//        mov     ecx, offset example.typeId__anon_575__struct_593.id
-//        mov     eax, offset example.typeId__anon_563__struct_586.id
-//        xor     rax, rcx
-//        pop     rbp
-//        ret
-// ```
-// notice how the ids are now stored and their offsets are loaded and used in the xor.
-//
-// the below approach using the hash of the type name worked kinda of well,
-// as its values could be optimized into compile time constants, but type names were too short,
-// causing u8 and f32 to actually have a hash collision lol,
-// maybe in the future we revisit this with a custom hash function built to
-// better support small strings, but i doubt it
-//
-// pub fn typeId(comptime T: type) usize {
-//     return std.hash_map.hashString(@typeName(T));
-// }
-
-// This function is stupid, but it works
 pub fn typeId(comptime T: type) usize {
-    return @intFromPtr(&struct {
-        const t: type = T;
-        var id: u8 = 0;
-    }.id);
+    return comptime blk: {
+        const name = @typeName(T);
+        var h: u64 = 14695981039346656037;
+        for (name, 0..) |c, i| {
+            _ = i;
+            h ^= c;
+            h *%= 1099511628211;
+        }
+        break :blk h;
+    };
 }
-
 
 test "type ids" {
     try std.testing.expect(typeId(u32) == typeId(u32));
@@ -58,14 +27,14 @@ test "type ids" {
 
     // struct tests
     const Dummy = struct { x: u32 };
-    try std.testing.expect(typeId(u32) != typeId(struct{ x: u32 }));
-    try std.testing.expect(typeId(struct{ x: u32 }) != typeId(struct{ x: u32 }));
-    try std.testing.expect(typeId(Dummy) != typeId(struct{ x: u32 }));
+    try std.testing.expect(typeId(u32) != typeId(struct { x: u32 }));
+    try std.testing.expect(typeId(struct { x: u32 }) != typeId(struct { x: u32 }));
+    try std.testing.expect(typeId(Dummy) != typeId(struct { x: u32 }));
     try std.testing.expect(typeId(Dummy) == typeId(Dummy));
 
     // ZST tests
     try std.testing.expect(typeId(void) == typeId(void));
-    try std.testing.expect(typeId(void) != typeId(struct{}));
+    try std.testing.expect(typeId(void) != typeId(struct {}));
 
     // alias tests
     const Name = []const u8;
@@ -79,4 +48,3 @@ test "object" {
     _ = Archetype;
     _ = World;
 }
-

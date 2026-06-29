@@ -32,26 +32,35 @@ pub fn Archetype(comptime T: type) type {
 
 /// generate an archetype key, which is a hash of all type ids in the given bundle B
 pub fn key(comptime B: type) usize {
-    if (@typeInfo(B) != .@"struct") @compileError("expected struct type");
-    const info = @typeInfo(B).@"struct";
+    return comptime blk: {
+        if (@typeInfo(B) != .@"struct") @compileError("expected struct type");
+        const info = @typeInfo(B).@"struct";
 
-    comptime var seen: [info.fields.len]type = undefined;
-    comptime var count: usize = 0;
+        var seen: [info.fields.len]type = undefined;
+        var count: usize = 0;
+        var k: usize = 0;
 
-    var k: usize = 0;
-    inline for(info.fields) |f| {
-        comptime {
-            for(seen[0..count]) |s| {
-                if (s == f.type) @compileError(
-                    "Bundle cannot have multiple fields of the same type"
-                );
-            }
+        for (info.fields, 0..) |f, i| {
+            for (seen[0..count]) |s| if (s == f.type)
+                    @compileError("Bundle cannot have multiple fields of the same type");
+
             seen[count] = f.type;
             count += 1;
+
+            for (info.fields[0..i]) |prev| {
+                if (typeId(f.type) == typeId(prev.type))
+                    @compileError(
+                        "Hash collision between "
+                        ++ @typeName(f.type)
+                        ++ " and "
+                        ++ @typeName(prev.type)
+                    );
+            }
+
+            k ^= typeId(f.type);
         }
-        k ^= typeId(f.type);
-    }
-    return k;
+        break :blk k;
+    };
 }
 
 test "archetype keys" {
@@ -78,7 +87,6 @@ test "archetype keys" {
     try std.testing.expect(key_a == key_b);
     try std.testing.expect(key_a != key_c);
 }
-
 
 test "archetypes" {
     var gpa: std.heap.DebugAllocator(.{}) = .init;
