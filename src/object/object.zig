@@ -8,12 +8,16 @@ const std = @import("std");
 pub const Archetype = @import("archetype.zig");
 pub const World = @import("World.zig");
 
+/// a unique id which stores some useful info about the object
+pub const ObjectID = packed struct(u64) {
+    _rem: u64 = 0,
+};
+
 pub fn typeId(comptime T: type) usize {
     return comptime blk: {
         const name = @typeName(T);
         var h: u64 = 14695981039346656037;
-        for (name, 0..) |c, i| {
-            _ = i;
+        for (name) |c| {
             h ^= c;
             h *%= 1099511628211;
         }
