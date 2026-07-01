@@ -63,7 +63,7 @@ fn bundleHash(comptime B: type) usize {
 }
 
 pub fn deinit(self: *World) void {
-    for (self.archetypes.items) |vt| vt.deinit(vt.ptr, self.alloc);
+    for (self.archetypes.items) |a| a.vtable.deinit(a.ptr, self.alloc);
     self.archetypes.deinit(self.alloc);
     self.registry.deinit(self.alloc);
 }
@@ -78,16 +78,7 @@ pub fn spawn(w: *World, bundle: anytype) !ObjectId {
 
         const new_ptr = try w.alloc.create(Archetype(BT));
         new_ptr.* = .init(try w.registry.getOrCreate(w.alloc, hash));
-        const vt: ArchetypeVTable = .{
-            .ptr = new_ptr,
-            .deinit = struct {
-                fn deinit(a: *anyopaque, alloc: std.mem.Allocator) void {
-                    const arch: *Archetype(BT) = @ptrCast(@alignCast(a));
-                    arch.deinit(alloc);
-                    alloc.destroy(arch);
-                }
-            }.deinit,
-        };
+        const vt: ArchetypeVTable = archetype.generateVTable(BT, new_ptr);
 
         try w.archetypes.append(w.alloc, vt);
         break :blk w.archetypes.items[key];
@@ -97,7 +88,12 @@ pub fn spawn(w: *World, bundle: anytype) !ObjectId {
     return arch.new(w.alloc, bundle);
 }
 
-// todo : despawn an object
+/// despawn the object corresponding to id
+pub fn despawn(w: *World, id: ObjectId) void {
+    const arch = w.archetypes.items[id.key];
+    arch.vtable.validate(arch.ptr, id);
+    arch.vtable.free(arch.ptr, w.alloc, id);
+}
 
 test "archetype keys" {
     const a = .{
@@ -188,4 +184,36 @@ test "world spawn" {
     try std.testing.expect(koichi.generation == 0);
     try std.testing.expect(kira.index == 0);
     try std.testing.expect(koichi.index == 1);
+}
+
+test "world despawn" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    var world: World = .{ .alloc = alloc };
+    defer world.deinit();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    const aya = try world.spawn(Person {
+        .name = @as([]const u8, "Aya Tsuji"),
+        .age = @as(u8, 26),
+    });
+
+    try std.testing.expect(aya.generation == 0);
+    try std.testing.expect(aya.index == 0);
+
+    world.despawn(aya);
+
+    const yukako = try world.spawn(Person {
+        .name = @as([]const u8, "Yukako Yamagishi"),
+        .age = @as(u8, 15),
+    });
+
+    try std.testing.expect(yukako.generation == 1);
+    try std.testing.expect(yukako.index == 0);
 }
