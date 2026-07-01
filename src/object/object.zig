@@ -1,9 +1,3 @@
-// note : the goal with archetype storage and the object function is to store
-//        all similar types in an archetype table as a struct of arrays,
-//        we're gonna have to do some wacky comptime stuff to construct this
-//        storage and create these types, also archetypes will have to be
-//        type-erased so that we can then store all archetypes in our world
-
 const std = @import("std");
 pub const Archetype = @import("archetype.zig");
 pub const World = @import("World.zig");
@@ -18,7 +12,7 @@ pub const ObjectID = packed struct(u64) {
     index: u32,
 };
 
-pub fn typeId(comptime T: type) usize {
+pub fn typeHash(comptime T: type) usize {
     return comptime blk: {
         const name = @typeName(T);
         var h: u64 = 14695981039346656037;
@@ -31,25 +25,25 @@ pub fn typeId(comptime T: type) usize {
 }
 
 test "type ids" {
-    try std.testing.expect(typeId(u32) == typeId(u32));
-    try std.testing.expect(typeId(u32) != typeId(f32));
+    try std.testing.expect(typeHash(u32) == typeHash(u32));
+    try std.testing.expect(typeHash(u32) != typeHash(f32));
     // struct tests
     const Dummy = struct { x: u32 };
-    try std.testing.expect(typeId(u32) != typeId(struct { x: u32 }));
-    try std.testing.expect(typeId(struct { x: u32 }) != typeId(struct { x: u32 }));
-    try std.testing.expect(typeId(Dummy) != typeId(struct { x: u32 }));
-    try std.testing.expect(typeId(Dummy) == typeId(Dummy));
+    try std.testing.expect(typeHash(u32) != typeHash(struct { x: u32 }));
+    try std.testing.expect(typeHash(struct { x: u32 }) != typeHash(struct { x: u32 }));
+    try std.testing.expect(typeHash(Dummy) != typeHash(struct { x: u32 }));
+    try std.testing.expect(typeHash(Dummy) == typeHash(Dummy));
 
     // ZST tests
-    try std.testing.expect(typeId(void) == typeId(void));
-    try std.testing.expect(typeId(void) != typeId(struct {}));
+    try std.testing.expect(typeHash(void) == typeHash(void));
+    try std.testing.expect(typeHash(void) != typeHash(struct {}));
 
     // alias tests
     const Name = []const u8;
-    try std.testing.expect(typeId(Name) == typeId([]const u8));
+    try std.testing.expect(typeHash(Name) == typeHash([]const u8));
 
     // generic type tests
-    try std.testing.expect(typeId(std.ArrayList(u32)) == typeId(std.ArrayList(u32)));
+    try std.testing.expect(typeHash(std.ArrayList(u32)) == typeHash(std.ArrayList(u32)));
 }
 
 test "object" {
