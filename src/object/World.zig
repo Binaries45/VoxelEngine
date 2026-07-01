@@ -3,6 +3,8 @@
 
 const std = @import("std");
 const archetype = @import("archetype.zig");
+const Archetype = archetype.Archetype;
+const ArchetypeVTable = archetype.ArchetypeVTable;
 const ObjectId = @import("object.zig").ObjectID;
 const typeHash = @import("object.zig").typeHash;
 
@@ -10,9 +12,9 @@ const World = @This();
 
 alloc: std.mem.Allocator,
 /// the registry of all unique archetype types, containing a mapping of each archetype hash to its index in `archetypes`
-registry: Registry,
+registry: Registry = .{},
 /// todo : a list of all archetypes in use by the world
-archetypes: std.ArrayList(*anyopaque),
+archetypes: std.ArrayList(ArchetypeVTable) = .empty,
 
 /// a registry mapping bundle type hashes to archetype storage keys
 pub const Registry = struct {
@@ -60,17 +62,39 @@ fn bundleHash(comptime B: type) usize {
     };
 }
 
+pub fn deinit(self: *World) void {
+    for (self.archetypes.items) |vt| vt.deinit(vt.ptr, self.alloc);
+    self.archetypes.deinit(self.alloc);
+    self.registry.deinit(self.alloc);
+}
+
 /// spawn an entity from the given bundle, returning its ID
 pub fn spawn(w: *World, bundle: anytype) !ObjectId {
     const hash = bundleHash(@TypeOf(bundle));
     const key = try w.registry.getOrCreate(w.alloc, hash);
+    const BT = @TypeOf(bundle);
+    const vtable = if (key < w.archetypes.items.len) w.archetypes.items[key] else blk: {
+        if (key != w.archetypes.items.len) @panic("invalid key"); // todo : better message
 
-    _ = key;
+        const new_ptr = try w.alloc.create(Archetype(BT));
+        new_ptr.* = .init(try w.registry.getOrCreate(w.alloc, hash));
+        const vt: ArchetypeVTable = .{
+            .ptr = new_ptr,
+            .deinit = struct {
+                fn deinit(a: *anyopaque, alloc: std.mem.Allocator) void {
+                    const arch: *Archetype(BT) = @ptrCast(@alignCast(a));
+                    arch.deinit(alloc);
+                    alloc.destroy(arch);
+                }
+            }.deinit,
+        };
 
-    // todo : add data to the correct archetype
-    // todo : get generation and index
-    // todo : construct and return the id
-    return error.todo;
+        try w.archetypes.append(w.alloc, vt);
+        break :blk w.archetypes.items[key];
+    };
+
+    const arch: *Archetype(BT) = @ptrCast(@alignCast(vtable.ptr));
+    return arch.new(w.alloc, bundle);
 }
 
 // todo : despawn an object
@@ -100,12 +124,12 @@ test "archetype keys" {
     try std.testing.expect(key_a != key_c);
 }
 
-test "type registry" {    
+test "type registry" {
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
-    var reg = Registry {};
+    var reg = Registry{};
     defer reg.deinit(alloc);
 
     const a = .{
@@ -122,7 +146,7 @@ test "type registry" {
         @as([]const u8, "hello"),
         @as(u8, 100),
     };
-    
+
     const hash_a = bundleHash(@TypeOf(a));
     const hash_b = bundleHash(@TypeOf(b));
     const hash_c = bundleHash(@TypeOf(c));
@@ -136,5 +160,32 @@ test "type registry" {
 }
 
 test "world spawn" {
-    
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    var world: World = .{ .alloc = alloc };
+    defer world.deinit();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    const kira = try world.spawn(Person {
+        .name = @as([]const u8, "Kira Yoshikage"),
+        .age = @as(u8, 33),
+    });
+
+    const koichi = try world.spawn(Person {
+        .name = @as([]const u8, "Koichi Hirose"),
+        .age = @as(u8, 15),
+    });
+
+    try std.testing.expect(kira.key == koichi.key);
+
+    try std.testing.expect(kira.generation == 0);
+    try std.testing.expect(koichi.generation == 0);
+    try std.testing.expect(kira.index == 0);
+    try std.testing.expect(koichi.index == 1);
 }

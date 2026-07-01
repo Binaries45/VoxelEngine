@@ -27,10 +27,16 @@ pub fn Archetype(comptime T: type) type {
 
         const Arch = @This();
 
+        /// initialize a new Archetype with the given key
+        pub fn init(key: u16) Arch {
+            return .{ .key = key };
+        }
+
         pub fn deinit(self: *Arch, alloc: std.mem.Allocator) void {
             self.data.deinit(alloc);
             self.generations.deinit(alloc);
             self.freed.deinit(alloc);
+            self.recycle.deinit(alloc);
         }
 
         fn toStorage(value: T) ST {
@@ -47,7 +53,7 @@ pub fn Archetype(comptime T: type) type {
             const generations = &self.generations;
             const freed = &self.freed;
             const recycle = &self.recycle;
-            
+
             // recycle old indices if possible
             if (recycle.pop()) |i| {
                 freed.unset(i);
@@ -61,12 +67,12 @@ pub fn Archetype(comptime T: type) type {
                     .key = self.key,
                 };
             }
-            
+
             try data.ensureUnusedCapacity(alloc, 1);
             try freed.resize(alloc, data.capacity, false);
             try generations.ensureUnusedCapacity(alloc, 1);
             // todo : resize pending deletions in the same way as freed
-            
+
             const index = data.len;
             data.appendAssumeCapacity(toStorage(value));
             freed.unset(index);
@@ -83,15 +89,15 @@ pub fn Archetype(comptime T: type) type {
             const freed = &self.freed;
             const generations = &self.generations;
 
-            if(id.key != self.key) {
+            if (id.key != self.key) {
                 @panic(fn_name ++ "() called with object not from this archetype");
             }
 
-            if(id.generation != generations.items[id.index]) {
+            if (id.generation != generations.items[id.index]) {
                 @panic(fn_name ++ "() called with an object that has already been freed");
             }
-            
-            if(freed.isSet(id.index)) {
+
+            if (freed.isSet(id.index)) {
                 @panic(fn_name ++ "() called with an object that has already been freed");
             }
 
@@ -114,6 +120,12 @@ pub fn Archetype(comptime T: type) type {
     };
 }
 
+/// a vtable for helping handle type erased archetypes
+pub const ArchetypeVTable = struct {
+    ptr: *anyopaque,
+    deinit: *const fn(a: *anyopaque, alloc: std.mem.Allocator) void,  
+};
+
 test "archetypes" {
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
@@ -122,7 +134,7 @@ test "archetypes" {
     var arch: Archetype(struct {
         name: []const u8,
         age: u8,
-    }) = .{.key = 0};
+    }) = .init(0);
 
     defer arch.deinit(alloc);
 

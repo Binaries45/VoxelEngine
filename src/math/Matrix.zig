@@ -110,7 +110,7 @@ fn MulRetTy(comptime T: type, comptime U: type) type {
     @compileError("invalid types for multiplication " ++ @typeName(T) ++ " and " ++ @typeName(U));
 }
 
-/// multiply a matrix by a matric, vector, or scalar
+/// multiply a matrix by a matrix, vector, or scalar
 pub fn mul(a: anytype, b: anytype) MulRetTy(@TypeOf(a), @TypeOf(b)) {
     const Ta = @TypeOf(a);
     const Tb = @TypeOf(b);
