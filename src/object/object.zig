@@ -10,7 +10,12 @@ pub const World = @import("World.zig");
 
 /// a unique id which stores some useful info about the object
 pub const ObjectID = packed struct(u64) {
-    _rem: u64 = 0,
+    /// the key of the bundle corresponding to this object
+    key: u16,
+    /// the generation number of this object within its archetype
+    generation: u16,
+    /// the index of this object within its archetype
+    index: u32,
 };
 
 pub fn typeId(comptime T: type) usize {
@@ -28,7 +33,6 @@ pub fn typeId(comptime T: type) usize {
 test "type ids" {
     try std.testing.expect(typeId(u32) == typeId(u32));
     try std.testing.expect(typeId(u32) != typeId(f32));
-
     // struct tests
     const Dummy = struct { x: u32 };
     try std.testing.expect(typeId(u32) != typeId(struct { x: u32 }));

@@ -1,5 +1,3 @@
-// todo : make all of the vector functions take anytype, and use VecInfo internally
-
 const std = @import("std");
 const helpers = @import("helpers.zig");
 
@@ -61,44 +59,44 @@ pub inline fn swizzle(v: anytype, comptime mask: [vecInfo(@TypeOf(v)).len]i32) @
 
 // todo : write tests
 test "vector dot product" {
-    const a = Vec(3, i32) { 1, 0, 0 };
-    const b = Vec(3, i32) { 0, 1, 0 };
+    const a = Vec(3, i32){ 1, 0, 0 };
+    const b = Vec(3, i32){ 0, 1, 0 };
     try std.testing.expect(dot(a, b) == 0);
 
     // todo : other tests
 }
 
 test "vector magnitude" {
-    const v1 = Vec(3, f32) {1, 0, 0};
+    const v1 = Vec(3, f32){ 1, 0, 0 };
     const m1 = magnitude(v1);
     try std.testing.expect(m1 == 1.0);
 
-    const v2 = Vec(3, f32) {1, 0, 1};
+    const v2 = Vec(3, f32){ 1, 0, 1 };
     const m2 = magnitude(v2);
     try std.testing.expect(m2 == @sqrt(2.0));
 }
 
 test "vector normalize" {
-    const v1 = Vec(3, f32) {3, 0, 0};
+    const v1 = Vec(3, f32){ 3, 0, 0 };
     const n1 = normalize(v1);
-    try std.testing.expect(@reduce(.And, n1 == Vec(3, f32) {1, 0, 0}));
+    try std.testing.expect(@reduce(.And, n1 == Vec(3, f32){ 1, 0, 0 }));
 
     // todo : other tests
 }
 
 test "vector cross product" {
-    const a = Vec(3, f32) {1, 0, 0};
-    const b = Vec(3, f32) {0, 1, 0};
+    const a = Vec(3, f32){ 1, 0, 0 };
+    const b = Vec(3, f32){ 0, 1, 0 };
     const c = cross(a, b);
-    try std.testing.expect(@reduce(.And, c == Vec(3, f32) {0, 0, 1}));
+    try std.testing.expect(@reduce(.And, c == Vec(3, f32){ 0, 0, 1 }));
 
     // todo : other tests
 }
 
 test "vector swizzle" {
-    const a = Vec(4, f32) {1, 2, 3, 4};
-    const xs = swizzle(a, .{0, 0, 0, 0});
-    const rev = swizzle(a, .{3, 2, 1, 0});
-    try std.testing.expect(@reduce(.And, xs == Vec(4, f32) {1, 1, 1, 1}));
-    try std.testing.expect(@reduce(.And, rev == Vec(4, f32) {4, 3, 2, 1}));
+    const a = Vec(4, f32){ 1, 2, 3, 4 };
+    const xs = swizzle(a, .{ 0, 0, 0, 0 });
+    const rev = swizzle(a, .{ 3, 2, 1, 0 });
+    try std.testing.expect(@reduce(.And, xs == Vec(4, f32){ 1, 1, 1, 1 }));
+    try std.testing.expect(@reduce(.And, rev == Vec(4, f32){ 4, 3, 2, 1 }));
 }
