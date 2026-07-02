@@ -3,7 +3,7 @@ pub const Archetype = @import("archetype.zig");
 pub const World = @import("World.zig");
 
 /// a unique id which stores some useful info about the object
-pub const ObjectID = packed struct(u64) {
+pub const ObjectId = packed struct(u64) {
     /// the key of the bundle corresponding to this object
     key: u16,
     /// the generation number of this object within its archetype

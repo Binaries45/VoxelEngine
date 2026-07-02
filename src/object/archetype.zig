@@ -2,7 +2,7 @@
 
 const std = @import("std");
 const object = @import("object.zig");
-const ObjectID = object.ObjectID;
+const ObjectId = object.ObjectId;
 
 // given the type of some component bundle,
 // construct an archetype storing the component data
@@ -48,7 +48,7 @@ pub fn Archetype(comptime T: type) type {
         }
 
         /// create a new object and add it to `self` returning its id
-        pub fn new(self: *Arch, alloc: std.mem.Allocator, value: T) !ObjectID {
+        pub fn new(self: *Arch, alloc: std.mem.Allocator, value: T) !ObjectId {
             const data = &self.data;
             const generations = &self.generations;
             const freed = &self.freed;
@@ -61,7 +61,7 @@ pub fn Archetype(comptime T: type) type {
                 const gen = generations.items[i] + 1;
                 generations.items[i] = gen;
                 data.set(i, toStorage(value));
-                return ObjectID{
+                return ObjectId{
                     .generation = gen,
                     .index = i,
                     .key = self.key,
@@ -85,7 +85,7 @@ pub fn Archetype(comptime T: type) type {
             };
         }
 
-        fn validate(self: *const Arch, id: ObjectID, comptime fn_name: []const u8) void {
+        fn validate(self: *const Arch, id: ObjectId, comptime fn_name: []const u8) void {
             const freed = &self.freed;
             const generations = &self.generations;
 
@@ -103,21 +103,21 @@ pub fn Archetype(comptime T: type) type {
         }
 
         /// get the value of a specific field of the object with the given id
-        pub fn get(self: *const Arch, id: ObjectID, comptime field: std.meta.FieldEnum(T)) @FieldType(T, @tagName(field)) {
+        pub fn get(self: *const Arch, id: ObjectId, comptime field: std.meta.FieldEnum(T)) @FieldType(T, @tagName(field)) {
             const data = &self.data;
             self.validate(id, "get");
             return data.items(field)[id.index];
         }
 
         /// get the value of the object with the given id
-        pub fn getValue(self: *const Arch, id: ObjectID) T {
+        pub fn getValue(self: *const Arch, id: ObjectId) T {
             const data = &self.data;
             self.validate(id, "getValue");
             return data.get(id.index);
         }
 
         /// free an object, opening its slot for new data
-        pub fn free(self: *Arch, alloc: std.mem.Allocator, id: ObjectID) !void {
+        pub fn free(self: *Arch, alloc: std.mem.Allocator, id: ObjectId) !void {
             self.validate(id, "remove");
             const freed = &self.freed;
             const recycle = &self.recycle;
@@ -136,8 +136,10 @@ pub const ArchetypeVTable = struct {
 
 const VTable = struct {
     deinit: *const fn(a: *anyopaque, alloc: std.mem.Allocator) void,
-    free: *const fn(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectID) void,
-    validate: *const fn(a: *anyopaque, id: ObjectID) void,
+    free: *const fn(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectId) void,
+    validate: *const fn(a: *anyopaque, id: ObjectId) void,
+    get: *const fn(a: *anyopaque, id: ObjectId, field: u32, out: *anyopaque) void,
+    getValue: *const fn(a: *anyopaque, id: ObjectId, out: *anyopaque) void,
 };
 
 fn generateImpl(comptime T: type) *const VTable {
@@ -151,18 +153,41 @@ fn generateImpl(comptime T: type) *const VTable {
                 }
             }.deinit,
             .free = struct {
-                pub fn free(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectID) void {
+                pub fn free(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectId) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     arch.free(alloc, id) catch
                         @panic("failed free for archetype containing" ++ @typeName(T));
                 }
             }.free,
             .validate = struct {
-                pub fn validate(a: *anyopaque, id: ObjectID) void {
+                pub fn validate(a: *anyopaque, id: ObjectId) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     arch.validate(id, "VTable.validate");
                 }
             }.validate,
+            .get = struct {
+                pub fn get(a: *anyopaque, id: ObjectId, field: u32, out: *anyopaque) void {
+                    const arch: *Archetype(T) = @ptrCast(@alignCast(a));
+                    const fields = @typeInfo(T).@"struct".fields;
+                    if(comptime fields.len == 0) @compileError("cannot get field of struct with no fields");
+                    switch(field) {
+                        inline 0...fields.len - 1 => |i| {
+                            const f: std.meta.FieldEnum(T) = @enumFromInt(i);
+                            const FT = @FieldType(T, @tagName(f));
+                            const res: *FT = @ptrCast(@alignCast(out));
+                            res.* = arch.get(id, f);
+                        },
+                        else => unreachable,
+                    }
+                }
+            }.get,
+            .getValue = struct {
+                pub fn getValue(a: *anyopaque, id: ObjectId, out: *anyopaque) void {
+                    const arch: *Archetype(T) = @ptrCast(@alignCast(a));
+                    const res: *T = @ptrCast(@alignCast(out));
+                    res.* = arch.getValue(id);
+                }
+            }.getValue,
         };
     }.vt;
 }
@@ -226,4 +251,52 @@ test "freeing data" {
 
     try std.testing.expect(okuyasu.generation == 1);    
     try std.testing.expect(okuyasu.index == 0);
+}
+
+test "getting fields" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    var arch: Archetype(Person) = .init(0);
+    defer arch.deinit(alloc);
+
+    const hazamada = try arch.new(alloc, .{
+        .name = "Toshikazu Hazamada",
+        .age = 17,
+    });
+
+    const name = arch.get(hazamada, .name);    
+    const age = arch.get(hazamada, .age);
+
+    try std.testing.expect(std.mem.eql(u8, name, "Toshikazu Hazamada"));
+    try std.testing.expect(age == 17);    
+}
+
+test "getting data" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    var arch: Archetype(Person) = .init(0);
+    defer arch.deinit(alloc);
+
+    const tonio = try arch.new(alloc, .{
+        .name = "Tonio Trussardi",
+        .age = 29,
+    });
+
+    const val = arch.getValue(tonio);
+    try std.testing.expect(std.mem.eql(u8, val.name, "Tonio Trussardi"));
+    try std.testing.expect(val.age == 29);  
 }

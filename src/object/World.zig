@@ -5,7 +5,7 @@ const std = @import("std");
 const archetype = @import("archetype.zig");
 const Archetype = archetype.Archetype;
 const ArchetypeVTable = archetype.ArchetypeVTable;
-const ObjectId = @import("object.zig").ObjectID;
+const ObjectId = @import("object.zig").ObjectId;
 const typeHash = @import("object.zig").typeHash;
 
 const World = @This();
@@ -95,6 +95,34 @@ pub fn despawn(w: *World, id: ObjectId) void {
     arch.vtable.free(arch.ptr, w.alloc, id);
 }
 
+/// get the given field of some object
+pub fn get(w: *World, comptime T: type, comptime field: std.meta.FieldEnum(T), id: ObjectId) @FieldType(T, @tagName(field)) {
+    const arch = w.archetypes.items[id.key];
+    arch.vtable.validate(arch.ptr, id);
+
+    if (std.debug.runtime_safety) {
+        std.debug.assert(w.registry.map.get(bundleHash(T)) == id.key);
+    }
+
+    var out: @FieldType(T, @tagName(field)) = undefined;
+    arch.vtable.get(arch.ptr, id, @intFromEnum(field), @ptrCast(&out));
+    return out;
+}
+
+/// get the value of the object corresponding to the given id
+pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
+    const arch = w.archetypes.items[id.key];
+    arch.vtable.validate(arch.ptr, id);
+
+    if (std.debug.runtime_safety) {
+        std.debug.assert(w.registry.map.get(bundleHash(T)) == id.key);
+    }
+    
+    var out: T = undefined;
+    arch.vtable.getValue(arch.ptr, id, &out);
+    return out;
+}
+
 test "archetype keys" {
     const a = .{
         @as(u8, 42),
@@ -168,12 +196,12 @@ test "world spawn" {
         age: u8,
     };
 
-    const kira = try world.spawn(Person {
+    const kira = try world.spawn(Person{
         .name = @as([]const u8, "Kira Yoshikage"),
         .age = @as(u8, 33),
     });
 
-    const koichi = try world.spawn(Person {
+    const koichi = try world.spawn(Person{
         .name = @as([]const u8, "Koichi Hirose"),
         .age = @as(u8, 15),
     });
@@ -199,7 +227,7 @@ test "world despawn" {
         age: u8,
     };
 
-    const aya = try world.spawn(Person {
+    const aya = try world.spawn(Person{
         .name = @as([]const u8, "Aya Tsuji"),
         .age = @as(u8, 26),
     });
@@ -209,11 +237,61 @@ test "world despawn" {
 
     world.despawn(aya);
 
-    const yukako = try world.spawn(Person {
+    const yukako = try world.spawn(Person{
         .name = @as([]const u8, "Yukako Yamagishi"),
         .age = @as(u8, 15),
     });
 
     try std.testing.expect(yukako.generation == 1);
     try std.testing.expect(yukako.index == 0);
+}
+
+test "world get" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    var world: World = .{ .alloc = alloc };
+    defer world.deinit();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    const yuya = try world.spawn(Person{
+        .name = "Yuya Fungami",
+        .age = 18,
+    });
+
+    const name = world.get(Person, .name, yuya);
+    const age = world.get(Person, .age, yuya);
+
+    try std.testing.expect(std.mem.eql(u8, name, "Yuya Fungami"));
+    try std.testing.expect(age == 18);
+    
+}
+
+test "world getValue" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    var world: World = .{ .alloc = alloc };
+    defer world.deinit();
+
+    const Person = struct {
+        name: []const u8,
+        age: u8,
+    };
+
+    const tamami = try world.spawn(Person{
+        .name = "Tamami Kobayashi",
+        .age = 20,
+    });
+
+    const val = world.getValue(Person, tamami);
+
+    try std.testing.expect(std.mem.eql(u8, val.name, "Tamami Kobayashi"));
+    try std.testing.expect(val.age == 20);
 }
