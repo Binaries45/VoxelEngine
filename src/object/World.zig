@@ -93,7 +93,7 @@ pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
     if (std.debug.runtime_safety) {
         std.debug.assert(w.registry.map.get(typeId(T)) == id.key);
     }
-    
+
     var out: T = undefined;
     arch.vtable.getValue(arch.ptr, id, &out);
     return out;
@@ -244,7 +244,6 @@ test "world get" {
 
     try std.testing.expect(std.mem.eql(u8, name, "Yuya Fungami"));
     try std.testing.expect(age == 18);
-    
 }
 
 test "world getValue" {
@@ -254,7 +253,6 @@ test "world getValue" {
 
     var world: World = .{ .alloc = alloc };
     defer world.deinit();
-
     const Person = struct {
         name: []const u8,
         age: u8,
