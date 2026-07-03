@@ -12,38 +12,58 @@ pub const ObjectId = packed struct(u64) {
     index: u32,
 };
 
-pub fn typeHash(comptime T: type) usize {
-    return comptime blk: {
-        const name = @typeName(T);
-        var h: u64 = 14695981039346656037;
-        for (name) |c| {
-            h ^= c;
-            h *%= 1099511628211;
-        }
-        break :blk h;
+/// a bit set acting as a mask of component ids
+pub const TypeIdBitset = u128;
+
+var next_id: u32 = 0;
+
+/// returns the component id corresponding to a bit to be set in the TypeId
+pub fn componentId(comptime T: type) u32 {
+    const S = struct {
+        const t = T;
+        var id: ?u32 = null;
     };
+    if (S.id) |id| return id;
+    const id = next_id;
+    next_id += 1;
+    S.id = id;
+    return id;
 }
 
-test "type ids" {
-    try std.testing.expect(typeHash(u32) == typeHash(u32));
-    try std.testing.expect(typeHash(u32) != typeHash(f32));
+/// returns a full mask of the components making up T
+pub fn typeId(comptime T: type) TypeIdBitset {
+    if (@typeInfo(T) != .@"struct") @compileError("expected struct type");
+    const info = @typeInfo(T).@"struct";
+    var mask: TypeIdBitset = 0;
+    inline for (info.fields) |f| {
+        const id = componentId(f.type);
+        mask |= @as(TypeIdBitset, 1) << @as(u7, @intCast(id));
+    }
+
+    return mask;
+}
+
+test "component ids" {
+    try std.testing.expect(componentId(u32) == componentId(u32));
+    try std.testing.expect(componentId(u32) != componentId(f32));
+
     // struct tests
     const Dummy = struct { x: u32 };
-    try std.testing.expect(typeHash(u32) != typeHash(struct { x: u32 }));
-    try std.testing.expect(typeHash(struct { x: u32 }) != typeHash(struct { x: u32 }));
-    try std.testing.expect(typeHash(Dummy) != typeHash(struct { x: u32 }));
-    try std.testing.expect(typeHash(Dummy) == typeHash(Dummy));
+    try std.testing.expect(componentId(u32) != componentId(struct { x: u32 }));
+    try std.testing.expect(componentId(struct { x: u32 }) != componentId(struct { x: u32 }));
+    try std.testing.expect(componentId(Dummy) != componentId(struct { x: u32 }));
+    try std.testing.expect(componentId(Dummy) == componentId(Dummy));
 
     // ZST tests
-    try std.testing.expect(typeHash(void) == typeHash(void));
-    try std.testing.expect(typeHash(void) != typeHash(struct {}));
+    try std.testing.expect(componentId(void) == componentId(void));
+    try std.testing.expect(componentId(void) != componentId(struct {}));
 
     // alias tests
     const Name = []const u8;
-    try std.testing.expect(typeHash(Name) == typeHash([]const u8));
+    try std.testing.expect(componentId(Name) == componentId([]const u8));
 
     // generic type tests
-    try std.testing.expect(typeHash(std.ArrayList(u32)) == typeHash(std.ArrayList(u32)));
+    try std.testing.expect(componentId(std.ArrayList(u32)) == componentId(std.ArrayList(u32)));
 }
 
 test "object" {

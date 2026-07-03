@@ -5,8 +5,10 @@ const std = @import("std");
 const archetype = @import("archetype.zig");
 const Archetype = archetype.Archetype;
 const ArchetypeVTable = archetype.ArchetypeVTable;
-const ObjectId = @import("object.zig").ObjectId;
-const typeHash = @import("object.zig").typeHash;
+const object = @import("object.zig");
+const ObjectId = object.ObjectId;
+const typeId = object.typeId;
+const TypeIdBitset = object.TypeIdBitset;
 
 const World = @This();
 
@@ -18,49 +20,23 @@ archetypes: std.ArrayList(ArchetypeVTable) = .empty,
 
 /// a registry mapping bundle type hashes to archetype storage keys
 pub const Registry = struct {
-    map: std.AutoArrayHashMapUnmanaged(usize, u16) = .{},
+    map: std.AutoArrayHashMapUnmanaged(TypeIdBitset, u16) = .{},
     next: u16 = 0,
 
     pub fn deinit(r: *Registry, alloc: std.mem.Allocator) void {
         r.map.deinit(alloc);
     }
 
-    pub fn getOrCreate(r: *Registry, alloc: std.mem.Allocator, hash: usize) !u16 {
-        if (r.map.get(hash)) |id| return id;
+    pub fn getOrCreate(r: *Registry, alloc: std.mem.Allocator, bits: TypeIdBitset) !u16 {
+        if (r.map.get(bits)) |id| return id;
 
         const key = r.next;
         r.next += 1;
 
-        try r.map.putNoClobber(alloc, hash, key);
+        try r.map.putNoClobber(alloc, bits, key);
         return key;
     }
 };
-
-/// generate a hash of the given bundle type by combining all type hashes of its fields
-fn bundleHash(comptime B: type) usize {
-    return comptime blk: {
-        if (@typeInfo(B) != .@"struct") @compileError("expected struct type");
-        const info = @typeInfo(B).@"struct";
-
-        var seen: [info.fields.len]type = undefined;
-        var count: usize = 0;
-        var k: usize = 0;
-
-        for (info.fields, 0..) |f, i| {
-            for (seen[0..count]) |s| if (s == f.type)
-                @compileError("Bundle cannot have multiple fields of the same type");
-
-            seen[count] = f.type;
-            count += 1;
-
-            for (info.fields[0..i]) |prev| if (typeHash(f.type) == typeHash(prev.type))
-                @compileError("Hash collision between " ++ @typeName(f.type) ++ " and " ++ @typeName(prev.type));
-
-            k ^= typeHash(f.type);
-        }
-        break :blk k;
-    };
-}
 
 pub fn deinit(self: *World) void {
     for (self.archetypes.items) |a| a.vtable.deinit(a.ptr, self.alloc);
@@ -70,14 +46,14 @@ pub fn deinit(self: *World) void {
 
 /// spawn an entity from the given bundle, returning its ID
 pub fn spawn(w: *World, bundle: anytype) !ObjectId {
-    const hash = bundleHash(@TypeOf(bundle));
-    const key = try w.registry.getOrCreate(w.alloc, hash);
+    const id = typeId(@TypeOf(bundle));
+    const key = try w.registry.getOrCreate(w.alloc, id);
     const BT = @TypeOf(bundle);
     const vtable = if (key < w.archetypes.items.len) w.archetypes.items[key] else blk: {
         if (key != w.archetypes.items.len) @panic("invalid key"); // todo : better message
 
         const new_ptr = try w.alloc.create(Archetype(BT));
-        new_ptr.* = .init(try w.registry.getOrCreate(w.alloc, hash));
+        new_ptr.* = .init(try w.registry.getOrCreate(w.alloc, id));
         const vt: ArchetypeVTable = archetype.generateVTable(BT, new_ptr);
 
         try w.archetypes.append(w.alloc, vt);
@@ -101,7 +77,7 @@ pub fn get(w: *World, comptime T: type, comptime field: std.meta.FieldEnum(T), i
     arch.vtable.validate(arch.ptr, id);
 
     if (std.debug.runtime_safety) {
-        std.debug.assert(w.registry.map.get(bundleHash(T)) == id.key);
+        std.debug.assert(w.registry.map.get(typeId(T)) == id.key);
     }
 
     var out: @FieldType(T, @tagName(field)) = undefined;
@@ -115,7 +91,7 @@ pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
     arch.vtable.validate(arch.ptr, id);
 
     if (std.debug.runtime_safety) {
-        std.debug.assert(w.registry.map.get(bundleHash(T)) == id.key);
+        std.debug.assert(w.registry.map.get(typeId(T)) == id.key);
     }
     
     var out: T = undefined;
@@ -139,11 +115,10 @@ test "archetype keys" {
         @as(u8, 100),
     };
 
-    const key_a = bundleHash(@TypeOf(a));
-    const key_b = bundleHash(@TypeOf(b));
-    const key_c = bundleHash(@TypeOf(c));
+    const key_a = typeId(@TypeOf(a));
+    const key_b = typeId(@TypeOf(b));
+    const key_c = typeId(@TypeOf(c));
 
-    try std.testing.expect(key_a == typeHash(u8) ^ typeHash(f32));
     try std.testing.expect(key_a == key_b);
     try std.testing.expect(key_a != key_c);
 }
@@ -171,9 +146,9 @@ test "type registry" {
         @as(u8, 100),
     };
 
-    const hash_a = bundleHash(@TypeOf(a));
-    const hash_b = bundleHash(@TypeOf(b));
-    const hash_c = bundleHash(@TypeOf(c));
+    const hash_a = typeId(@TypeOf(a));
+    const hash_b = typeId(@TypeOf(b));
+    const hash_c = typeId(@TypeOf(c));
 
     const key_a = try reg.getOrCreate(alloc, hash_a);
     const key_b = try reg.getOrCreate(alloc, hash_b);
