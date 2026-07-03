@@ -9,6 +9,7 @@ const object = @import("object.zig");
 const ObjectId = object.ObjectId;
 const typeId = object.typeId;
 const TypeIdBitset = object.TypeIdBitset;
+const CanonicalType = object.CanonicalType;
 
 const World = @This();
 
@@ -46,9 +47,15 @@ pub fn deinit(self: *World) void {
 
 /// spawn an entity from the given bundle, returning its ID
 pub fn spawn(w: *World, bundle: anytype) !ObjectId {
-    const id = typeId(@TypeOf(bundle));
+    const BT = CanonicalType(@TypeOf(bundle));
+    const id = typeId(BT);
     const key = try w.registry.getOrCreate(w.alloc, id);
-    const BT = @TypeOf(bundle);
+
+    var canonical: BT = undefined;
+    inline for(@typeInfo(@TypeOf(bundle)).@"struct".fields) |f| {
+        @field(canonical, f.name) = @field(bundle, f.name);
+    }
+    
     const vtable = if (key < w.archetypes.items.len) w.archetypes.items[key] else blk: {
         if (key != w.archetypes.items.len) @panic("invalid key"); // todo : better message
 
@@ -61,7 +68,7 @@ pub fn spawn(w: *World, bundle: anytype) !ObjectId {
     };
 
     const arch: *Archetype(BT) = @ptrCast(@alignCast(vtable.ptr));
-    return arch.new(w.alloc, bundle);
+    return arch.new(w.alloc, canonical);
 }
 
 /// despawn the object corresponding to id
@@ -97,6 +104,11 @@ pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
     var out: T = undefined;
     arch.vtable.getValue(arch.ptr, id, &out);
     return out;
+}
+
+/// return a pointer to the archetype holding the given type
+pub fn getArchetype() void {
+    
 }
 
 test "archetype keys" {
@@ -267,4 +279,34 @@ test "world getValue" {
 
     try std.testing.expect(std.mem.eql(u8, val.name, "Tamami Kobayashi"));
     try std.testing.expect(val.age == 20);
+}
+
+test "anonymous structs" {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    var world: World = .{ .alloc = alloc };
+    defer world.deinit();
+
+    const Ghost = struct {
+        name: []const u8,
+        age_at_death: u8,
+    };
+
+    const rohan = try world.spawn(.{
+        .name = @as([]const u8, "Kishibe Rohan"),
+        .age = @as(u8, 20), 
+    });
+
+    try std.testing.expect(rohan.generation == 0);
+    try std.testing.expect(rohan.index == 0);
+
+    const reimi = try world.spawn(Ghost {
+        .name = "Reimi Sugimoto",
+        .age_at_death = 16,
+    });
+
+    try std.testing.expect(reimi.generation == 0);
+    try std.testing.expect(reimi.index == 1);
 }

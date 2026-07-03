@@ -43,6 +43,29 @@ pub fn typeId(comptime T: type) TypeIdBitset {
     return mask;
 }
 
+/// generate a canonical type representation to allow anonymous structs to be spawned without error
+pub fn CanonicalType(comptime T: type) type {
+    if(@typeInfo(T) != .@"struct") @compileError("expected struct type");
+    const info = @typeInfo(T).@"struct";
+    const Attributes = std.builtin.Type.StructField.Attributes;
+
+    var names: [info.fields.len][]const u8 = undefined;
+    var types: [info.fields.len]type = undefined;
+    var attrs: [info.fields.len]Attributes = undefined;
+
+    inline for(info.fields, 0..) |f, i| {
+        names[i] = f.name;
+        types[i] = f.type;
+        attrs[i] = Attributes {
+            .@"align" = f.alignment,
+            .@"comptime" = false,
+            .default_value_ptr = null,
+        };
+    }
+
+    return @Struct(.auto, null, &names, &types, &attrs);
+}
+
 test "component ids" {
     try std.testing.expect(componentId(u32) == componentId(u32));
     try std.testing.expect(componentId(u32) != componentId(f32));
