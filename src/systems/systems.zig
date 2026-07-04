@@ -65,6 +65,7 @@ pub fn inspectSystem(comptime s: anytype) SystemInfo {
 //   queries
 //   resources
 //   command buffer
+//   get archetypes from a given query
 
 test "systems" {
     _ = query;
@@ -72,7 +73,7 @@ test "systems" {
 
 test "system inspection" {
     const system = struct {
-        fn system(q: Query(.{ u32, f32 })) void {
+        fn system(q: Query(struct { *u32, *const f32 })) void {
             _ = q;
         }
     }.system;

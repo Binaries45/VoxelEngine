@@ -16,7 +16,7 @@ const World = @This();
 alloc: std.mem.Allocator,
 /// the registry of all unique archetype types, containing a mapping of each archetype hash to its index in `archetypes`
 registry: Registry = .{},
-/// todo : a list of all archetypes in use by the world
+/// a list of all archetypes in use by the world
 archetypes: std.ArrayList(ArchetypeVTable) = .empty,
 
 /// a registry mapping bundle type hashes to archetype storage keys
@@ -36,6 +36,11 @@ pub const Registry = struct {
 
         try r.map.putNoClobber(alloc, bits, key);
         return key;
+    }
+
+    /// get the archetype key of the corresponding bitset, if it exists
+    pub fn get(r: *Registry, bits: TypeIdBitset) ?u16 {
+        return r.map.get(bits);
     }
 };
 
@@ -106,9 +111,16 @@ pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
     return out;
 }
 
+fn archetypeOf(w: *World, comptime T: type) *anyopaque {
+    const id = typeId(CanonicalType(T));
+    const key = w.registry.get(id);
+    return w.archetypes.items[key].ptr;
+}
+
 /// return a pointer to the archetype holding the given type
-pub fn getArchetype() void {
-    
+pub fn getArchetype(w: *World, comptime T: type) *Archetype(T) {
+    const ptr = w.archetypeOf(T);
+    return @ptrCast(@alignCast(ptr));
 }
 
 test "archetype keys" {
@@ -295,8 +307,8 @@ test "anonymous structs" {
     };
 
     const rohan = try world.spawn(.{
-        .name = @as([]const u8, "Kishibe Rohan"),
-        .age = @as(u8, 20), 
+        @as([]const u8, "Kishibe Rohan"),
+        @as(u8, 20), 
     });
 
     try std.testing.expect(rohan.generation == 0);

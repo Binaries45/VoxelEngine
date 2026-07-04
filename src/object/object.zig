@@ -25,6 +25,7 @@ pub fn componentId(comptime T: type) u32 {
     };
     if (S.id) |id| return id;
     const id = next_id;
+    if(next_id > 128) @panic("too many components!");
     next_id += 1;
     S.id = id;
     return id;
