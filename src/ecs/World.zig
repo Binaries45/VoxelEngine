@@ -5,11 +5,11 @@ const std = @import("std");
 const archetype = @import("archetype.zig");
 const Archetype = archetype.Archetype;
 const ArchetypeVTable = archetype.ArchetypeVTable;
-const object = @import("object.zig");
-const ObjectId = object.ObjectId;
-const typeId = object.typeId;
-const TypeIdBitset = object.TypeIdBitset;
-const CanonicalType = object.CanonicalType;
+const entity = @import("entity.zig");
+const Entity = entity.Entity;
+const typeId = entity.typeId;
+const TypeIdBitset = entity.TypeIdBitset;
+const CanonicalType = entity.CanonicalType;
 
 const World = @This();
 
@@ -51,7 +51,7 @@ pub fn deinit(self: *World) void {
 }
 
 /// spawn an entity from the given bundle, returning its ID
-pub fn spawn(w: *World, bundle: anytype) !ObjectId {
+pub fn spawn(w: *World, bundle: anytype) !Entity {
     const BT = CanonicalType(@TypeOf(bundle));
     const id = typeId(BT);
     const key = try w.registry.getOrCreate(w.alloc, id);
@@ -77,14 +77,14 @@ pub fn spawn(w: *World, bundle: anytype) !ObjectId {
 }
 
 /// despawn the object corresponding to id
-pub fn despawn(w: *World, id: ObjectId) void {
+pub fn despawn(w: *World, id: Entity) void {
     const arch = w.archetypes.items[id.key];
     arch.vtable.validate(arch.ptr, id);
     arch.vtable.free(arch.ptr, w.alloc, id);
 }
 
 /// get the given field of some object
-pub fn get(w: *World, comptime T: type, comptime field: std.meta.FieldEnum(T), id: ObjectId) @FieldType(T, @tagName(field)) {
+pub fn get(w: *World, comptime T: type, comptime field: std.meta.FieldEnum(T), id: Entity) @FieldType(T, @tagName(field)) {
     const arch = w.archetypes.items[id.key];
     arch.vtable.validate(arch.ptr, id);
 
@@ -98,7 +98,7 @@ pub fn get(w: *World, comptime T: type, comptime field: std.meta.FieldEnum(T), i
 }
 
 /// get the value of the object corresponding to the given id
-pub fn getValue(w: *World, comptime T: type, id: ObjectId) T {
+pub fn getValue(w: *World, comptime T: type, id: Entity) T {
     const arch = w.archetypes.items[id.key];
     arch.vtable.validate(arch.ptr, id);
 

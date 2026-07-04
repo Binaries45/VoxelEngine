@@ -1,9 +1,9 @@
 
 const std = @import("std");
 const SystemParam = @import("systems.zig").SystemParam;
-const object = @import("../object/object.zig");
-const TypeIdBitset = object.TypeIdBitset;
-const componentId = object.componentId;
+const entity = @import("../ecs/entity.zig");
+const TypeIdBitset = entity.TypeIdBitset;
+const componentId = entity.componentId;
 
 /// construct a query from some type params
 pub fn Query(comptime Ts: type) type {

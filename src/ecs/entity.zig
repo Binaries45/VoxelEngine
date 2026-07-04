@@ -1,9 +1,11 @@
 const std = @import("std");
 pub const Archetype = @import("archetype.zig");
 pub const World = @import("World.zig");
+pub const table = @import("storage/table.zig");
+pub const Column = @import("storage/Column.zig");
 
 /// a unique id which stores some useful info about the object
-pub const ObjectId = packed struct(u64) {
+pub const Entity = packed struct(u64) {
     /// the key of the bundle corresponding to this object
     key: u16,
     /// the generation number of this object within its archetype
@@ -25,7 +27,7 @@ pub fn componentId(comptime T: type) u32 {
     };
     if (S.id) |id| return id;
     const id = next_id;
-    if(next_id > 128) @panic("too many components!");
+    if (next_id > 128) @panic("too many components!");
     next_id += 1;
     S.id = id;
     return id;
@@ -46,7 +48,7 @@ pub fn typeId(comptime T: type) TypeIdBitset {
 
 /// generate a canonical type representation to allow anonymous structs to be spawned without error
 pub fn CanonicalType(comptime T: type) type {
-    if(@typeInfo(T) != .@"struct") @compileError("expected struct type");
+    if (@typeInfo(T) != .@"struct") @compileError("expected struct type");
     const info = @typeInfo(T).@"struct";
     const Attributes = std.builtin.Type.StructField.Attributes;
 
@@ -54,10 +56,10 @@ pub fn CanonicalType(comptime T: type) type {
     var types: [info.fields.len]type = undefined;
     var attrs: [info.fields.len]Attributes = undefined;
 
-    inline for(info.fields, 0..) |f, i| {
+    inline for (info.fields, 0..) |f, i| {
         names[i] = f.name;
         types[i] = f.type;
-        attrs[i] = Attributes {
+        attrs[i] = Attributes{
             .@"align" = f.alignment,
             .@"comptime" = false,
             .default_value_ptr = null,
@@ -93,4 +95,6 @@ test "component ids" {
 test "object" {
     _ = Archetype;
     _ = World;
+    _ = table;
+    _ = Column;
 }

@@ -1,8 +1,8 @@
 //! an archetype, storing all objects with the same structure
 
 const std = @import("std");
-const object = @import("object.zig");
-const ObjectId = object.ObjectId;
+const entity = @import("entity.zig");
+const Entity = entity.Entity;
 
 // given the type of some component bundle,
 // construct an archetype storing the component data
@@ -48,7 +48,7 @@ pub fn Archetype(comptime T: type) type {
         }
 
         /// create a new object and add it to `self` returning its id
-        pub fn new(self: *Arch, alloc: std.mem.Allocator, value: T) !ObjectId {
+        pub fn new(self: *Arch, alloc: std.mem.Allocator, value: T) !Entity {
             const data = &self.data;
             const generations = &self.generations;
             const freed = &self.freed;
@@ -61,7 +61,7 @@ pub fn Archetype(comptime T: type) type {
                 const gen = generations.items[i] + 1;
                 generations.items[i] = gen;
                 data.set(i, toStorage(value));
-                return ObjectId{
+                return Entity{
                     .generation = gen,
                     .index = i,
                     .key = self.key,
@@ -85,7 +85,7 @@ pub fn Archetype(comptime T: type) type {
             };
         }
 
-        fn validate(self: *const Arch, id: ObjectId, comptime fn_name: []const u8) void {
+        fn validate(self: *const Arch, id: Entity, comptime fn_name: []const u8) void {
             const freed = &self.freed;
             const generations = &self.generations;
 
@@ -103,21 +103,21 @@ pub fn Archetype(comptime T: type) type {
         }
 
         /// get the value of a specific field of the object with the given id
-        pub fn get(self: *const Arch, id: ObjectId, comptime field: std.meta.FieldEnum(T)) @FieldType(T, @tagName(field)) {
+        pub fn get(self: *const Arch, id: Entity, comptime field: std.meta.FieldEnum(T)) @FieldType(T, @tagName(field)) {
             const data = &self.data;
             self.validate(id, "get");
             return data.items(field)[id.index];
         }
 
         /// get the value of the object with the given id
-        pub fn getValue(self: *const Arch, id: ObjectId) T {
+        pub fn getValue(self: *const Arch, id: Entity) T {
             const data = &self.data;
             self.validate(id, "getValue");
             return data.get(id.index);
         }
 
         /// free an object, opening its slot for new data
-        pub fn free(self: *Arch, alloc: std.mem.Allocator, id: ObjectId) !void {
+        pub fn free(self: *Arch, alloc: std.mem.Allocator, id: Entity) !void {
             self.validate(id, "remove");
             const freed = &self.freed;
             const recycle = &self.recycle;
@@ -136,10 +136,10 @@ pub const ArchetypeVTable = struct {
 
 const VTable = struct {
     deinit: *const fn(a: *anyopaque, alloc: std.mem.Allocator) void,
-    free: *const fn(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectId) void,
-    validate: *const fn(a: *anyopaque, id: ObjectId) void,
-    get: *const fn(a: *anyopaque, id: ObjectId, field: u32, out: *anyopaque) void,
-    getValue: *const fn(a: *anyopaque, id: ObjectId, out: *anyopaque) void,
+    free: *const fn(a: *anyopaque, alloc: std.mem.Allocator, id: Entity) void,
+    validate: *const fn(a: *anyopaque, id: Entity) void,
+    get: *const fn(a: *anyopaque, id: Entity, field: u32, out: *anyopaque) void,
+    getValue: *const fn(a: *anyopaque, id: Entity, out: *anyopaque) void,
 };
 
 fn generateImpl(comptime T: type) *const VTable {
@@ -153,20 +153,20 @@ fn generateImpl(comptime T: type) *const VTable {
                 }
             }.deinit,
             .free = struct {
-                pub fn free(a: *anyopaque, alloc: std.mem.Allocator, id: ObjectId) void {
+                pub fn free(a: *anyopaque, alloc: std.mem.Allocator, id: Entity) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     arch.free(alloc, id) catch
                         @panic("failed free for archetype containing" ++ @typeName(T));
                 }
             }.free,
             .validate = struct {
-                pub fn validate(a: *anyopaque, id: ObjectId) void {
+                pub fn validate(a: *anyopaque, id: Entity) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     arch.validate(id, "VTable.validate");
                 }
             }.validate,
             .get = struct {
-                pub fn get(a: *anyopaque, id: ObjectId, field: u32, out: *anyopaque) void {
+                pub fn get(a: *anyopaque, id: Entity, field: u32, out: *anyopaque) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     const fields = @typeInfo(T).@"struct".fields;
                     if(comptime fields.len == 0) @compileError("cannot get field of struct with no fields");
@@ -182,7 +182,7 @@ fn generateImpl(comptime T: type) *const VTable {
                 }
             }.get,
             .getValue = struct {
-                pub fn getValue(a: *anyopaque, id: ObjectId, out: *anyopaque) void {
+                pub fn getValue(a: *anyopaque, id: Entity, out: *anyopaque) void {
                     const arch: *Archetype(T) = @ptrCast(@alignCast(a));
                     const res: *T = @ptrCast(@alignCast(out));
                     res.* = arch.getValue(id);
@@ -199,6 +199,21 @@ pub fn generateVTable(comptime T: type, ptr: *anyopaque) ArchetypeVTable {
         .vtable = generateImpl(T),
     };
 }
+
+pub const ArchetypeId = u32;
+
+const ArchetypeComponents = struct {
+    /// component ids for all components in this archetype that will reside in a `Table`
+    table_components: []const u32,  
+};
+
+/// Storage conatining all Archetypes in a `World`
+pub const Archetypes = struct {
+    archetypes: std.ArrayList(Archetype),
+    // /// a map to find an archetype id by its components
+    // by_components: std.AutoArrayHashMapUnmanaged(ArchetypeComponents, ArchetypeId),
+    // todo : a map of component id -> a map of archetype id to archetye records, for finding all archetypes with the given components
+};
 
 test "new data" {
     var gpa: std.heap.DebugAllocator(.{}) = .init;
