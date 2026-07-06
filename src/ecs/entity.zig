@@ -16,14 +16,18 @@ pub const Entity = packed struct(u64) {
 
 /// a bit set acting as a mask of component ids
 pub const TypeIdBitset = u128;
+pub const ComponentId = u32;
+
+// TODO : component info for runtime component creation without relying on types
+//        (store id, size, align, and maybe a free/drop fn)
 
 var next_id: u32 = 0;
 
 /// returns the component id corresponding to a bit to be set in the TypeId
-pub fn componentId(comptime T: type) u32 {
+pub fn componentIdOf(comptime T: type) ComponentId {
     const S = struct {
         const t = T;
-        var id: ?u32 = null;
+        var id: ?ComponentId = null;
     };
     if (S.id) |id| return id;
     const id = next_id;
@@ -39,7 +43,7 @@ pub fn typeId(comptime T: type) TypeIdBitset {
     const info = @typeInfo(T).@"struct";
     var mask: TypeIdBitset = 0;
     inline for (info.fields) |f| {
-        const id = componentId(f.type);
+        const id = componentIdOf(f.type);
         mask |= @as(TypeIdBitset, 1) << @as(u7, @intCast(id));
     }
 
@@ -70,26 +74,26 @@ pub fn CanonicalType(comptime T: type) type {
 }
 
 test "component ids" {
-    try std.testing.expect(componentId(u32) == componentId(u32));
-    try std.testing.expect(componentId(u32) != componentId(f32));
+    try std.testing.expect(componentIdOf(u32) == componentIdOf(u32));
+    try std.testing.expect(componentIdOf(u32) != componentIdOf(f32));
 
     // struct tests
     const Dummy = struct { x: u32 };
-    try std.testing.expect(componentId(u32) != componentId(struct { x: u32 }));
-    try std.testing.expect(componentId(struct { x: u32 }) != componentId(struct { x: u32 }));
-    try std.testing.expect(componentId(Dummy) != componentId(struct { x: u32 }));
-    try std.testing.expect(componentId(Dummy) == componentId(Dummy));
+    try std.testing.expect(componentIdOf(u32) != componentIdOf(struct { x: u32 }));
+    try std.testing.expect(componentIdOf(struct { x: u32 }) != componentIdOf(struct { x: u32 }));
+    try std.testing.expect(componentIdOf(Dummy) != componentIdOf(struct { x: u32 }));
+    try std.testing.expect(componentIdOf(Dummy) == componentIdOf(Dummy));
 
     // ZST tests
-    try std.testing.expect(componentId(void) == componentId(void));
-    try std.testing.expect(componentId(void) != componentId(struct {}));
+    try std.testing.expect(componentIdOf(void) == componentIdOf(void));
+    try std.testing.expect(componentIdOf(void) != componentIdOf(struct {}));
 
     // alias tests
     const Name = []const u8;
-    try std.testing.expect(componentId(Name) == componentId([]const u8));
+    try std.testing.expect(componentIdOf(Name) == componentIdOf([]const u8));
 
     // generic type tests
-    try std.testing.expect(componentId(std.ArrayList(u32)) == componentId(std.ArrayList(u32)));
+    try std.testing.expect(componentIdOf(std.ArrayList(u32)) == componentIdOf(std.ArrayList(u32)));
 }
 
 test "object" {
