@@ -76,6 +76,14 @@ pub const Tables = struct {
     table_ids: std.array_hash_map.Custom([]ComponentId, TableId, HashCtx, false),
 
     // todo : acutal control for adding things into tables
+
+    // initialize and return an empty `Tables` to be populated later
+    pub fn init(alloc: std.mem.Allocator) !Tables {
+        return .{
+            .table_ids = try .init(alloc, &.{}, &.{}),
+            .tables = try .initCapacity(alloc, 0),
+        };
+    }
 };
 
 test "component id hashing" {

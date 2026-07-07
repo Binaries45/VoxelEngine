@@ -9,3 +9,10 @@ pub const Column = @import("storage/Column.zig");
 
 alloc: std.mem.Allocator,
 tables: Tables,
+
+pub fn init(alloc: std.mem.Allocator) @This() {
+    return .{
+        .alloc = alloc,
+        .tables = .init(alloc),
+    };
+}
