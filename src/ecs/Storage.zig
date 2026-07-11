@@ -16,3 +16,8 @@ pub fn init(alloc: std.mem.Allocator) @This() {
         .tables = .init(alloc),
     };
 }
+
+test "storage" {
+    _ = table;
+    _ = Column;
+}

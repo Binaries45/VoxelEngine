@@ -94,15 +94,17 @@ pub fn remove(self: *Column, i: usize) void {
     self.raw.len -= 1;
 }
 
-/// get a value of the speciified type at the given index
-pub fn get(self: *Column, comptime T: type, i: usize) T {
+/// get a value of the specified type at the given index
+pub fn get(self: *Column, comptime T: type, i: usize) ?T {
     const offset = self.layout.size * i;
+    if (offset >= self.raw.data.len) return null;
     return std.mem.bytesToValue(T, &self.raw.data[offset]);
 }
 
 /// get a pointer to the value at index `i`
-pub fn getPtr(self: *const Column, comptime T: type, i: usize) *T {
+pub fn getPtr(self: *const Column, comptime T: type, i: usize) ?*T {
     const offset = self.layout.size * i;
+    if (offset >= self.raw.data.len) return null;
     return @ptrCast(@alignCast(&self.raw.data[offset]));
 }
 
@@ -121,7 +123,7 @@ test "Column" {
     try std.testing.expect(col.raw.len == 2);
 
     try std.testing.expect(col.get(u32, 0) == 42);
-    try std.testing.expect(col.getPtr(u32, 1).* == 21);
+    try std.testing.expect(col.getPtr(u32, 1).?.* == 21);
 
     col.remove(0);
 

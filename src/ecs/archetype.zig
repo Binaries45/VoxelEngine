@@ -15,7 +15,7 @@ pub const ArchetypeEntity = struct {
 /// TODO : meaningful comment
 pub const Archetype = struct {
     id: ArchetypeId,
-    /// the underlying table of this archetype
+    /// the id of the underlying table of this archetype
     table_id: TableId,
     /// all entities in the archetype
     entities: ArrayList(ArchetypeEntity),
@@ -30,5 +30,5 @@ pub const Archetypes = struct {
         return .{
             .archetypes = try .initCapacity(alloc, 0)
         };
-    } 
+    }
 };
