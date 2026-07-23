@@ -2,7 +2,7 @@ const std = @import("std");
 const Io = std.Io;
 
 const ve = @import("VoxelEngine");
-const ecs = ve.flecs;
+const ecs = ve.ecs;
 
 const Position = struct { x: f32, y: f32 };
 const Velocity = struct { x: f32, y: f32 };
