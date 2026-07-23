@@ -9,7 +9,6 @@ const Archetypes = archetype.Archetypes;
 
 // TODO : entities
 // TODO : resources
-// TODO : archetypes
 // TODO : bundles
 // ...
 alloc: std.mem.Allocator,

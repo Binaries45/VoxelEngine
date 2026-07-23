@@ -54,6 +54,13 @@ pub fn build(b: *std.Build) !void {
     const mod_sokol = dep_sokol.module("sokol");
     mod.addImport("sokol", mod_sokol);
 
+    const zflecs = b.dependency("zflecs", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zflecs_mod = zflecs.module("root");
+    mod.addImport("zflecs", zflecs_mod);
+
     const exe = b.addExecutable(.{
         .name = "VoxelEngine",
         .root_module = b.createModule(.{
