@@ -1,8 +1,9 @@
 //! a plugin is a bundle of features that can be added to the app.
 //! All plugins must have a function called `build`
-//!  which will construct and add all necessary data from the plugin to the ecs
+//! which will construct and add all necessary data from the plugin to the ecs
 
 const std = @import("std");
+const App = @import("App.zig");
 
 const Plugin = @This();
 
@@ -11,5 +12,11 @@ const Plugin = @This();
 /// checks to ensure the given plugin has the required implemenatations, causes a compile error if it does not.
 pub fn validate(comptime plugin: anytype) void {
     if (!std.meta.hasFn(@TypeOf(plugin), "build")) @compileError("All plugins must have a build function");    
-    // TODO : ensure build has the right signature, taking in a pointer to the app
+    const build = @typeInfo(@TypeOf(@field(@TypeOf(plugin), "build"))).@"fn";
+
+    if (build.params.len != 1) @compileError("build is expected to have only one parameter");
+    if (build.return_type != void) @compileError("build is expected to have a return type of void");
+
+    const param = build.params[0];
+    if (param.type != *App) @compileError("build is expected to take in a value of the type *App, found " ++ @typeName(param.type));
 }
