@@ -26,7 +26,6 @@ fn move_system_with_it(it: *ecs.iter_t, positions: []Position, velocities: []con
 }
 
 pub fn main(init: std.process.Init) !void {
-    // const bob = ecs.new_entity(world, "Bob");
     // _ = ecs.set(world, bob, Position, .{ .vec = fVec3{0, 0, 0} });
     // _ = ecs.set(world, bob, Velocity, .{ .vec = fVec3{1, 2, 3} });
     // ecs.add_pair(world, bob, ecs.id(Eats), ecs.id(Apples));
@@ -42,7 +41,10 @@ pub fn main(init: std.process.Init) !void {
     app.addTags(.{ Eats, Apples });
     app.addSystem("move system", ecs.OnUpdate, move_system);
     app.addSystem("move system with iterator", ecs.OnUpdate, move_system_with_it);
-    // TODO : spawn entities
+
+    const bob = app.newEntity("Bob");
+    _ = bob;
+    
     // TODO : progress
     try app.run();
 }

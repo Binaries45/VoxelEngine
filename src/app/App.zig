@@ -1,5 +1,6 @@
 const std = @import("std");
 const ecs = @import("zflecs");
+const Plugin  = @import("Plugin.zig");
 
 const App = @This();
 
@@ -8,11 +9,7 @@ world: *ecs.world_t,
 
 // TODO
 //     plugins.
-//     add plugins
-//     add systems
-//     add components
-//     add tags
-//     ...  
+//     add plugins.
 
 pub fn init(alloc: std.mem.Allocator) App {
     return .{
@@ -43,4 +40,13 @@ pub fn addTags(app: *App, comptime tags: anytype) void {
 /// add the given systems to the ecs
 pub fn addSystem(app: *App, name: [*:0]const u8, phase: ecs.entity_t, comptime fn_system: anytype) void {
     _ = ecs.ADD_SYSTEM(app.world, name, phase, fn_system);
+}
+
+pub fn newEntity(app: *App, name: [*:0]const u8) ecs.entity_t {
+    return ecs.new_entity(app.world, name);
+}
+
+pub fn addPlugin(app: *App, comptime plugin: anytype) void {
+    Plugin.validate(plugin);
+    @TypeOf(plugin).build(app);
 }
