@@ -3,12 +3,12 @@ const Vec = Vector.Vec;
 const helpers = @import("helpers.zig");
 
 /// create a quaternion with the given element type
-pub fn Quat(comptime T: type) type {
+pub fn Quat(T: type) type {
     if (!helpers.isScalar(T)) @compileError("Element type must be an integer or float");
     return Vec(4, T);
 }
 
-fn QuatInfo(comptime Q: type) type {
+fn QuatInfo(Q: type) type {
     const I = @typeInfo(Q);
     if (I != .vector) @compileError(@typeName(Q) ++ " is not a valid Quaternion");
     return struct {
@@ -28,6 +28,4 @@ pub fn dot(a: anytype, b: anytype) QuatInfo(@TypeOf(a, b)).T {
 
 // normalize
 
-test "quaternion dot product" {
-
-}
+test "quaternion dot product" {}

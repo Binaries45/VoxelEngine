@@ -9,7 +9,7 @@ const has_avx = if(arch == .x86_64) std.Target.x86.featureSetHas(builtin.cpu.fea
 const has_fma = if(arch == .x86_64) std.Target.x86.featureSetHas(builtin.cpu.features, .fma) else false;
 
 /// return an CxR column major vector with C columns of size R containing elements of type T
-pub fn Mat(comptime C: comptime_int, comptime R: comptime_int, comptime T: type) type {
+pub fn Mat(C: comptime_int, R: comptime_int, T: type) type {
     if (C > 4) @compileError("Matrices cannot have more than 4 columns");
     if (R > 4) @compileError("Matrices cannot have more than 4 rows");
     if (!helpers.isScalar(T)) @compileError("Element type must be an integer or float");
@@ -17,7 +17,7 @@ pub fn Mat(comptime C: comptime_int, comptime R: comptime_int, comptime T: type)
 }
 
 /// returns info on the type of M if M is a matrix type, otherwise returns null
-fn matInfo(comptime M: type) ?type {
+fn matInfo(M: type) ?type {
     const c = if (@typeInfo(M) == .array) @typeInfo(M).array
     else return null;
     const v = if (@typeInfo(c.child) == .vector) @typeInfo(c.child).vector
@@ -31,18 +31,18 @@ fn matInfo(comptime M: type) ?type {
 }
 
 /// return the type of a matrix
-fn MatType(comptime M: type) type {
+fn MatType(M: type) type {
     const I = matInfo(M) orelse @compileError("Expected matrix type");
     return Mat(I.cols, I.rows, I.T);
 }
 
 /// return the zero matrix with the given size and element type
-pub fn zero(comptime C: comptime_int, comptime R: comptime_int, comptime T: type) Mat(C,R,T) {
+pub fn zero(C: comptime_int, R: comptime_int, T: type) Mat(C,R,T) {
     return @splat(@splat(@as(T, 0)));
 }
 
 /// return the identity matrix with the given size and element type
-pub fn identity(comptime M: type) M {
+pub fn identity(M: type) M {
     const I = matInfo(M) orelse @compileError("Expected matrix type");
     var res: M = zero(I.cols, I.cols, I.T);
     inline for (0..I.cols) |i| res[i][i] = @as(I.T, 1);
@@ -62,12 +62,12 @@ pub fn transpose(m: anytype) MatTransposeType(@TypeOf(m)) {
     return res;
 }
 
-fn MatTransposeType(comptime M: type) type {
+fn MatTransposeType(M: type) type {
     const I = matInfo(M) orelse @compileError("Expected matrix type");
     return Mat(I.rows, I.cols, I.T);
 }
 
-fn MulRetTy(comptime T: type, comptime U: type) type {
+fn MulRetTy(T: type, U: type) type {
     const TI = @typeInfo(T);
     const UI = @typeInfo(U);
     const TM = matInfo(T);

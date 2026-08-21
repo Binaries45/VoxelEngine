@@ -11,12 +11,15 @@ const Plugin = @This();
 
 /// checks to ensure the given plugin has the required implemenatations, causes a compile error if it does not.
 pub fn validate(comptime plugin: anytype) void {
-    if (!std.meta.hasFn(@TypeOf(plugin), "build")) @compileError("All plugins must have a build function");    
+    if (!std.meta.hasFn(@TypeOf(plugin), "build")) @compileError("All plugins must have a build function");
     const build = @typeInfo(@TypeOf(@field(@TypeOf(plugin), "build"))).@"fn";
 
-    if (build.params.len != 1) @compileError("build is expected to have only one parameter");
-    if (build.return_type != void) @compileError("build is expected to have a return type of void");
+    if (build.params.len != 1)
+        @compileError("build is expected to have only one parameter");
+    if (build.return_type != void)
+        @compileError("build is expected to have a return type of void");
 
     const param = build.params[0];
-    if (param.type != *App) @compileError("build is expected to take in a value of the type *App, found " ++ @typeName(param.type));
+    if (param.type != *App)
+        @compileError("build is expected to take in a value of the type *App, found " ++ @typeName(param.type));
 }

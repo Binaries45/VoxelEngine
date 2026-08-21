@@ -2,7 +2,7 @@ const std = @import("std");
 const helpers = @import("helpers.zig");
 
 /// returns a vector of size N containing elements of type T
-pub inline fn Vec(comptime N: comptime_int, comptime T: type) type {
+pub inline fn Vec(N: comptime_int, T: type) type {
     if (N > 4) @compileError("Vectors cannot have length exceeding 4");
     if (!helpers.isScalar(T)) @compileError("Element type must be an integer or float");
     return @Vector(N, T);
@@ -43,8 +43,8 @@ pub fn cross(a: anytype, b: anytype) @TypeOf(a, b) {
     };
 }
 
-/// returns info on the type of V if V is a vector type, otherwise returns null
-pub fn vecInfo(comptime V: type) std.builtin.Type.Vector {
+/// returns type info on the vector V
+pub fn vecInfo(V: type) std.builtin.Type.Vector {
     const VI = @typeInfo(V);
     if (VI != .vector) @compileError(@typeName(V) ++ " is not a vector type");
     return VI.vector;

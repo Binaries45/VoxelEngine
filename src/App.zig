@@ -58,6 +58,11 @@ pub fn addPlugin(app: *App, comptime plugin: anytype) void {
 }
 
 /// set the value of a component for some entity
-pub fn set(app: *App, entity: u64, comptime T: type, component: T) void {
+pub fn set(app: *App, entity: u64, T: type, component: T) void {
     _ = ecs.set(app.world, entity, T, component);
+}
+
+/// get the value of a component for the given entity
+pub fn get(app: *App, entity: u64, T: type) ?T {
+    return ecs.get(app.world, entity, T);
 }
