@@ -3,7 +3,7 @@
 //! which will construct and add all necessary data from the plugin to the ecs
 
 const std = @import("std");
-const App = @import("App.zig");
+const App = @import("../App.zig");
 
 const Plugin = @This();
 

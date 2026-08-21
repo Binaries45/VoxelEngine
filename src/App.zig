@@ -1,6 +1,6 @@
 const std = @import("std");
 const ecs = @import("zflecs");
-const Plugin = @import("Plugin.zig");
+const Plugin = @import("app/Plugin.zig");
 
 const App = @This();
 
