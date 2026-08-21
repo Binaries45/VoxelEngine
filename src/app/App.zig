@@ -1,6 +1,6 @@
 const std = @import("std");
 const ecs = @import("zflecs");
-const Plugin  = @import("Plugin.zig");
+const Plugin = @import("Plugin.zig");
 
 const App = @This();
 
@@ -24,7 +24,9 @@ pub fn deinit(app: *App) void {
 
 pub fn run(app: *App) !void {
     _ = app;
-    // todo : actually run the app
+    // TODO :
+    // - progress the app until we find a need to terminate
+    //   - this will either be an error or some kind of program zignal to end
 }
 
 /// add the given components to the ecs

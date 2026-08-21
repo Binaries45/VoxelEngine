@@ -4,10 +4,6 @@
     .fingerprint = 0x1ac0aeeddbdf057d,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
-        .sokol = .{
-            .url = "git+https://github.com/floooh/sokol-zig#f9b2aa8fc0b0e78c946299e7b418fd04a9ef3559",
-            .hash = "sokol-0.1.0-pb1HK4RrNwA1QTln_ZtLaEBne8Dn6zgZH4UVA45cGdnM",
-        },
         .zflecs = .{
             .url = "git+https://github.com/zig-gamedev/zflecs#9c2771cf0cae508db622821bb7deac6e9370a9de",
             .hash = "zflecs-0.2.0-dev-1PN3yvUPQQBUdlukoUPPTpW5NLhkagNIEtOq0C0S3bmf",
