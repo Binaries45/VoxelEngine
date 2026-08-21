@@ -63,6 +63,6 @@ pub fn set(app: *App, entity: u64, T: type, component: T) void {
 }
 
 /// get the value of a component for the given entity
-pub fn get(app: *App, entity: u64, T: type) ?T {
+pub fn get(app: *App, entity: u64, T: type) ?*const T {
     return ecs.get(app.world, entity, T);
 }

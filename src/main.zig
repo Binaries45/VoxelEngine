@@ -24,14 +24,19 @@ pub fn main(init: std.process.Init) !void {
     app.addTags(.{ Eats, Apples });
     app.addSystem("move system", ecs.OnUpdate, move_system);
 
-    const bob = app.newEntity("Bob");
+    const alice = app.newEntity("Alice");
+    app.set(alice, Position, .{ .vec = fVec3{ 0, 0, 0 } });
+    app.set(alice, Velocity, .{ .vec = fVec3{ 2, 2, -1 } });
 
+    const bob = app.newEntity("Bob");
     app.set(bob, Position, .{ .vec = fVec3{ 0, 0, 0 } });
     app.set(bob, Velocity, .{ .vec = fVec3{ 1, 2, 3 } });
 
     app.step();
     app.step();
 
-    const p = ecs.get(app.world, bob, Position).?;
-    std.debug.print("Bob's position is: ({d}, {d}, {d})\n", .{ p.vec[0], p.vec[1], p.vec[2] });
+    const pa = app.get(alice, Position).?;
+    const pb = app.get(bob, Position).?;
+    std.debug.print("Alice's position is: ({d}, {d}, {d})\n", .{ pa.vec[0], pa.vec[1], pa.vec[2] });
+    std.debug.print("Bob's position is: ({d}, {d}, {d})\n", .{ pb.vec[0], pb.vec[1], pb.vec[2] });
 }
