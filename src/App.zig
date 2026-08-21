@@ -1,5 +1,5 @@
 const std = @import("std");
-const ecs = @import("zflecs");
+const ecs = @import("root.zig").ecs;
 const Plugin = @import("app/Plugin.zig");
 
 const App = @This();
@@ -20,6 +20,10 @@ pub fn init(alloc: std.mem.Allocator) App {
 
 pub fn deinit(app: *App) void {
     _ = ecs.fini(app.world);
+}
+
+pub fn step(app: *App) void {
+    _ = ecs.progress(app.world, 0);
 }
 
 pub fn run(app: *App) !void {
@@ -51,4 +55,9 @@ pub fn newEntity(app: *App, name: [*:0]const u8) ecs.entity_t {
 pub fn addPlugin(app: *App, comptime plugin: anytype) void {
     Plugin.validate(plugin);
     @TypeOf(plugin).build(app);
+}
+
+/// set the value of a component for some entity
+pub fn set(app: *App, entity: u64, comptime T: type, component: T) void {
+    _ = ecs.set(app.world, entity, T, component);
 }

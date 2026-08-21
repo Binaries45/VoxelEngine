@@ -16,35 +16,22 @@ fn move_system(positions: []Position, velocities: []const Velocity) void {
     for (positions, velocities) |*p, v| p.vec += v.vec;
 }
 
-// Optionally, systems can receive the components iterator (usually not necessary)
-fn move_system_with_it(it: *ecs.iter_t, positions: []Position, velocities: []const Velocity) void {
-    const type_str = ecs.table_str(it.world, it.table).?;
-    std.debug.print("Move entities with [{s}]\n", .{type_str});
-    defer ecs.os.free(type_str);
-
-    for (positions, velocities) |*p, v| p.vec += v.vec;
-}
-
 pub fn main(init: std.process.Init) !void {
-    // _ = ecs.set(world, bob, Position, .{ .vec = fVec3{0, 0, 0} });
-    // _ = ecs.set(world, bob, Velocity, .{ .vec = fVec3{1, 2, 3} });
     // ecs.add_pair(world, bob, ecs.id(Eats), ecs.id(Apples));
-
-    // _ = ecs.progress(world, 0);
-    // _ = ecs.progress(world, 0);
-
-    // const p = ecs.get(world, bob, Position).?;
-    // std.debug.print("Bob's position is ({d}, {d}, {d})\n", .{ p.vec[0], p.vec[1], p.vec[2] });
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
     app.addComponents(.{ Position, Velocity });
     app.addTags(.{ Eats, Apples });
     app.addSystem("move system", ecs.OnUpdate, move_system);
-    app.addSystem("move system with iterator", ecs.OnUpdate, move_system_with_it);
 
     const bob = app.newEntity("Bob");
-    _ = bob;
-    
-    // TODO : progress
-    try app.run();
+
+    app.set(bob, Position, .{ .vec = fVec3{ 0, 0, 0 } });
+    app.set(bob, Velocity, .{ .vec = fVec3{ 1, 2, 3 } });
+
+    app.step();
+    app.step();
+
+    const p = ecs.get(app.world, bob, Position).?;
+    std.debug.print("Bob's position is: ({d}, {d}, {d})\n", .{ p.vec[0], p.vec[1], p.vec[2] });
 }
