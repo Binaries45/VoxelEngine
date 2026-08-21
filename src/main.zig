@@ -5,24 +5,25 @@ const ve = @import("VoxelEngine");
 const ecs = ve.ecs;
 const fVec3 = ve.math.fVec3;
 
-/// NOTE : we have to wrap these in structs otherwise flecs will register them as the same type,
-/// maybe in the future we can have a way for the engine to auto-wrap these to reduce headaches later.
+// maybe in the future we can have a way for the engine to auto-wrap these to reduce headaches later.
 const Position = struct { vec: fVec3 };
 const Velocity = struct { vec: fVec3 };
-const Eats = struct {};
-const Apples = struct {};
 
-fn move_system(positions: []Position, velocities: []const Velocity) void {
-    for (positions, velocities) |*p, v| p.vec += v.vec;
-}
+const MovePlugin = struct {
+    pub fn build(app: *ve.App) void {
+        app.addComponents(.{ Position, Velocity });
+        app.addSystem("move system", ecs.OnUpdate, move_system);
+    }
+    
+    fn move_system(positions: []Position, velocities: []const Velocity) void {
+        for (positions, velocities) |*p, v| p.vec += v.vec;
+    }
+};
 
 pub fn main(init: std.process.Init) !void {
-    // ecs.add_pair(world, bob, ecs.id(Eats), ecs.id(Apples));
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
-    app.addComponents(.{ Position, Velocity });
-    app.addTags(.{ Eats, Apples });
-    app.addSystem("move system", ecs.OnUpdate, move_system);
+    app.addPlugin(MovePlugin{});
 
     const alice = app.newEntity("Alice");
     app.set(alice, Position, .{ .vec = fVec3{ 0, 0, 0 } });
