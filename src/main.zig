@@ -14,7 +14,7 @@ const MovePlugin = struct {
         app.addComponents(.{ Position, Velocity });
         app.addSystem("move system", ecs.OnUpdate, move_system);
     }
-    
+
     fn move_system(positions: []Position, velocities: []const Velocity) void {
         for (positions, velocities) |*p, v| p.vec += v.vec;
     }
@@ -23,7 +23,7 @@ const MovePlugin = struct {
 pub fn main(init: std.process.Init) !void {
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
-    app.addPlugin(MovePlugin{});
+    app.addPlugin(MovePlugin);
 
     const alice = app.newEntity("Alice");
     app.set(alice, Position, .{ .vec = fVec3{ 0, 0, 0 } });

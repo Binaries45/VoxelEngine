@@ -7,10 +7,6 @@ const App = @This();
 alloc: std.mem.Allocator,
 world: *ecs.world_t,
 
-// TODO
-//     plugins.
-//     add plugins.
-
 pub fn init(alloc: std.mem.Allocator) App {
     return .{
         .alloc = alloc,
@@ -52,9 +48,9 @@ pub fn newEntity(app: *App, name: [*:0]const u8) ecs.entity_t {
     return ecs.new_entity(app.world, name);
 }
 
-pub fn addPlugin(app: *App, comptime plugin: anytype) void {
+pub fn addPlugin(app: *App, plugin: type) void {
     Plugin.validate(plugin);
-    @TypeOf(plugin).build(app);
+    plugin.build(app);
 }
 
 /// set the value of a component for some entity
