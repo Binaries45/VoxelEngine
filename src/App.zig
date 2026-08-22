@@ -44,8 +44,14 @@ pub fn addSystem(app: *App, name: [*:0]const u8, phase: ecs.entity_t, comptime f
     _ = ecs.ADD_SYSTEM(app.world, name, phase, fn_system);
 }
 
+/// create and return a new entity
 pub fn newEntity(app: *App, name: [*:0]const u8) ecs.entity_t {
     return ecs.new_entity(app.world, name);
+}
+
+/// destroy an entity
+pub fn destroy(app: *App, entity: u64) void {
+    ecs.delete(app.world, entity);
 }
 
 pub fn addPlugin(app: *App, plugin: type) void {
@@ -56,6 +62,17 @@ pub fn addPlugin(app: *App, plugin: type) void {
 /// set the value of a component for some entity
 pub fn set(app: *App, entity: u64, T: type, component: T) void {
     _ = ecs.set(app.world, entity, T, component);
+}
+
+/// remove a component from an entity
+pub fn remove(app: *App, entity: u64, T: type) void {
+    ecs.remove(app.world, entity, T);
+}
+
+/// returns whether the given entity has the given component
+pub fn has(app: *App, entity: u64, T: type) bool {
+    const component = ecs.id(T);
+    return ecs.has_id(app.world, entity, component);
 }
 
 /// get the value of a component for the given entity

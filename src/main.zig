@@ -5,7 +5,6 @@ const ve = @import("VoxelEngine");
 const ecs = ve.ecs;
 const fVec3 = ve.math.fVec3;
 
-// maybe in the future we can have a way for the engine to auto-wrap these to reduce headaches later.
 const Position = struct { vec: fVec3 };
 const Velocity = struct { vec: fVec3 };
 
