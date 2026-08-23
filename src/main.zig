@@ -37,6 +37,6 @@ pub fn main(init: std.process.Init) !void {
 
     const pa = app.get(alice, Position).?;
     const pb = app.get(bob, Position).?;
-    std.debug.print("Alice's position is: ({d}, {d}, {d})\n", .{ pa.vec[0], pa.vec[1], pa.vec[2] });
-    std.debug.print("Bob's position is: ({d}, {d}, {d})\n", .{ pb.vec[0], pb.vec[1], pb.vec[2] });
+    std.debug.print("Alice's position is: {any}\n", .{pa.vec});
+    std.debug.print("Bob's position is: {any}\n", .{pb.vec});
 }
