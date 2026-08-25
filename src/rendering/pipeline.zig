@@ -5,6 +5,10 @@ const sapp = sokol.app;
 const sglue = sokol.glue;
 const shd = @import("../shaders/triangle.glsl.zig");
 
+const Vertex = @import("Vertex.zig");
+const Mesh = @import("Mesh.zig");
+
+/// global renderer state
 const state = struct {
     var bind: sg.Bindings = .{};
     var pip: sg.Pipeline = .{};
@@ -18,12 +22,7 @@ export fn init() void {
 
     // create vertex buffer with triangle vertices
     state.bind.vertex_buffers[0] = sg.makeBuffer(.{
-        .data = sg.asRange(&[_]f32{
-            // positions         colors
-            0.0,  0.5,  0.5, 1.0, 0.0, 0.0, 1.0,
-            0.5,  -0.5, 0.5, 0.0, 1.0, 0.0, 1.0,
-            -0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 1.0,
-        }),
+        .data = sg.asRange(Mesh.triangle.vertices),
     });
 
     // create a shader and pipeline object
@@ -31,8 +30,13 @@ export fn init() void {
         .shader = sg.makeShader(shd.triangleShaderDesc(sg.queryBackend())),
         .layout = init: {
             var l = sg.VertexLayoutState{};
+            l.buffers[0].stride = @sizeOf(Vertex);
+
             l.attrs[shd.ATTR_triangle_position].format = .FLOAT3;
+            l.attrs[shd.ATTR_triangle_position].offset = @offsetOf(Vertex, "pos");
+
             l.attrs[shd.ATTR_triangle_color0].format = .FLOAT4;
+            l.attrs[shd.ATTR_triangle_color0].offset = @offsetOf(Vertex, "color");
             break :init l;
         },
     });
