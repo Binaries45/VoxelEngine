@@ -4,6 +4,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+
     const mod = b.addModule("VoxelEngine", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
@@ -15,6 +16,25 @@ pub fn build(b: *std.Build) !void {
     });
     const zflecs_mod = zflecs.module("root");
     mod.addImport("zflecs", zflecs_mod);
+
+    // idk if this is needed for others,
+    // but I get a fuck ton of linker errors on my machine
+    // when not linking these explicitly
+    mod.linkSystemLibrary("asound", .{});
+    mod.linkSystemLibrary("GL", .{});
+    mod.linkSystemLibrary("X11", .{});
+    mod.linkSystemLibrary("Xi", .{});
+    mod.linkSystemLibrary("Xcursor", .{});
+
+    const dep_sokol = b.dependency("sokol", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const mod_sokol = dep_sokol.module("sokol");
+
+    mod.addImport("sokol", mod_sokol);
+
 
     const exe = b.addExecutable(.{
         .name = "VoxelEngine",
