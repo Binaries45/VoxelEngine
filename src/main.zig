@@ -5,38 +5,15 @@ const ve = @import("VoxelEngine");
 const ecs = ve.ecs;
 const fVec3 = ve.math.fVec3;
 
-const Position = struct { vec: fVec3 };
-const Velocity = struct { vec: fVec3 };
-
-const MovePlugin = struct {
-    pub fn build(app: *ve.App) void {
-        app.addComponents(.{ Position, Velocity });
-        app.addSystem("move system", ecs.OnUpdate, move_system);
-    }
-
-    fn move_system(positions: []Position, velocities: []const Velocity) void {
-        for (positions, velocities) |*p, v| p.vec += v.vec;
-    }
-};
 
 pub fn main(init: std.process.Init) !void {
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
-    app.addPlugin(MovePlugin);
 
-    const alice = app.newEntity("Alice");
-    app.set(alice, Position, .{ .vec = fVec3{ 0, 0, 0 } });
-    app.set(alice, Velocity, .{ .vec = fVec3{ 2, 2, -1 } });
+    ve.rendering.pipeline.run();
 
-    const bob = app.newEntity("Bob");
-    app.set(bob, Position, .{ .vec = fVec3{ 0, 0, 0 } });
-    app.set(bob, Velocity, .{ .vec = fVec3{ 1, 2, 3 } });
-
-    app.step();
-    app.step();
-
-    const pa = app.get(alice, Position).?;
-    const pb = app.get(bob, Position).?;
-    std.debug.print("Alice's position is: {any}\n", .{pa.vec});
-    std.debug.print("Bob's position is: {any}\n", .{pb.vec});
+    // TODO : spawn cube mesh
+    //        spawn camera
+    //        run app and render
+    //        also add rendering plugin that handles the above
 }

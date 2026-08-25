@@ -1,4 +1,5 @@
 const std = @import("std");
+const shader_build = @import("./src/rendering/shader_builder.zig");
 
 // todo : build as library (for when things are working)
 pub fn build(b: *std.Build) !void {
@@ -10,13 +11,16 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
 
+    // ECS --------------------------------------
     const zflecs = b.dependency("zflecs", .{
         .target = target,
         .optimize = optimize,
     });
     const zflecs_mod = zflecs.module("root");
     mod.addImport("zflecs", zflecs_mod);
+    // ------------------------------------------
 
+    // SOKOL ------------------------------------
     // idk if this is needed for others,
     // but I get a fuck ton of linker errors on my machine
     // when not linking these explicitly
@@ -34,7 +38,7 @@ pub fn build(b: *std.Build) !void {
     const mod_sokol = dep_sokol.module("sokol");
 
     mod.addImport("sokol", mod_sokol);
-
+    // ------------------------------------------
 
     const exe = b.addExecutable(.{
         .name = "VoxelEngine",
@@ -49,6 +53,23 @@ pub fn build(b: *std.Build) !void {
     });
 
     b.installArtifact(exe);
+
+    // BUILD SHADERS ----------------------------
+    const buildShader = shader_build.buildShader;
+    exe.step.dependOn(try buildShader(b, .{
+        .input = "src/shaders/triangle.glsl",
+        .output = "src/shaders/triangle.glsl.zig",
+        .reflection = true,
+        .shdc_dep = b.dependency("shdc", .{}),
+        .slang = .{
+            .glsl410 = true,
+            .metal_macos = true,
+            .hlsl5 = true,
+            .wgsl = true,
+            .spirv_vk = true,  
+        },
+    })); 
+    // ------------------------------------------
 
     const run_step = b.step("run", "Run the app");
 

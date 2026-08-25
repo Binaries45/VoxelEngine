@@ -12,6 +12,10 @@
             .url = "git+https://github.com/floooh/sokol-zig.git#d16e0a45954286cb4fe43dd32fb5af5d8768df75",
             .hash = "sokol-0.1.0-pb1HK5qjPwBTKBIT-WEk_zq9xIO8Pl-OLCYXbnRUXWvI",
         },
+        .shdc = .{
+            .url = "git+https://github.com/floooh/sokol-tools-bin.git#af9a893b745c9302114791cde57371b66af9aed6",
+            .hash = "sokolshdc-0.1.0-r2KZDp1tUwONDiIq01jjA5YoaXCEWT7mW78wLbpU026q",
+        },
     },
     .paths = .{
         "build.zig",
