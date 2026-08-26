@@ -6,5 +6,5 @@ pub const App = @import("App.zig");
 pub const pipeline = @import("rendering/pipeline.zig");
 
 pub fn build(app: *App) void {
-    _ = app;
+    app.addComponents(.{ Mesh });
 }

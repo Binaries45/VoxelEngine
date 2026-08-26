@@ -9,12 +9,12 @@ const Vertex = @import("Vertex.zig");
 const Mesh = @import("Mesh.zig");
 
 /// global renderer state
-const state = struct {
+pub const state = struct {
     var bind: sg.Bindings = .{};
     var pip: sg.Pipeline = .{};
 };
 
-export fn init() void {
+pub export fn init() void {
     sg.setup(.{
         .environment = sglue.environment(),
         .logger = .{ .func = slog.func },
@@ -42,7 +42,7 @@ export fn init() void {
     });
 }
 
-export fn frame() void {
+pub export fn frame() void {
     // default pass-action clears to grey
     sg.beginPass(.{ .swapchain = sglue.swapchain() });
     sg.applyPipeline(state.pip);
@@ -52,20 +52,6 @@ export fn frame() void {
     sg.commit();
 }
 
-export fn cleanup() void {
+pub export fn cleanup() void {
     sg.shutdown();
-}
-
-pub fn run() void {
-    sapp.run(.{
-        .init_cb = init,
-        .frame_cb = frame,
-        .cleanup_cb = cleanup,
-        .width = 640,
-        .height = 480,
-        .depth_format = .NONE,
-        .icon = .{ .sokol_default = true },
-        .window_title = "triangle.zig",
-        .logger = .{ .func = slog.func },
-    });
 }

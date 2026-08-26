@@ -1,11 +1,20 @@
 const std = @import("std");
 const ecs = @import("root.zig").ecs;
 const Plugin = @import("app/Plugin.zig");
+const rendering = @import("rendering.zig");
+const pipeline = rendering.pipeline;
+
+const sokol = @import("sokol");
+const sapp = sokol.app;
+const slog = sokol.log;
 
 const App = @This();
 
 alloc: std.mem.Allocator,
 world: *ecs.world_t,
+
+/// global app pointer
+var app_ptr: ?*App = null;
 
 pub fn init(alloc: std.mem.Allocator) App {
     return .{
@@ -23,10 +32,26 @@ pub fn step(app: *App) void {
 }
 
 pub fn run(app: *App) !void {
-    _ = app;
-    // TODO :
-    // - progress the app until we find a need to terminate
-    //   - this will either be an error or some kind of program zignal to end
+    app_ptr = app;
+ 
+    const tick = struct {
+        export fn tick() void {
+            app_ptr.?.step();
+            pipeline.frame();
+        }
+    }.tick;
+
+    sapp.run(.{
+        .init_cb = pipeline.init,
+        .frame_cb = tick,
+        .cleanup_cb = pipeline.cleanup,
+        .width = 1920,
+        .height = 1080,
+        .depth_format = .NONE,
+        .icon = .{ .sokol_default = true },
+        .window_title = "triangle.zig",
+        .logger = .{ .func = slog.func },
+    });
 }
 
 /// add the given components to the ecs
