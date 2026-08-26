@@ -12,9 +12,9 @@ const Vertex = @import("Vertex.zig");
 
 const Mesh = @This();
 
-// TODO : vertices & indices
 vertices: []const Vertex,
-indices: []const u32,
+// if this is null, draw straight from vertices
+indices: ?[]const u32,
 
 pub const triangle: Mesh = .{
     .vertices = &.{
@@ -22,6 +22,6 @@ pub const triangle: Mesh = .{
         Vertex{ .pos = fVec3{0.5, -0.5, 0.0}, .color = .{0.0, 1.0, 0.0, 1.0} },
         Vertex{ .pos = fVec3{-0.5, -0.5, 0.0}, .color = .{0.0, 0.0, 1.0, 1.0} },
     },
-    .indices = &.{},
+    .indices = null,
 };
 

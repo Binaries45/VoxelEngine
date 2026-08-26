@@ -26,6 +26,31 @@ const Quat = Quaternion.Quat;
 pub const iQuat = Quat(i32);
 pub const fQuat = Quat(f32);
 
+/// taken from : 
+/// https://github.com/floooh/sokol-zig/blob/6c0ba44e7c001354a476e43c78f571534144008b/examples/instancing.zig#L171 
+fn xorshift32() u32 {
+    const static = struct {
+        var x: u32 = 0x12345678;
+    };
+    var x = static.x;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    static.x = x;
+    return x;
+}
+
+/// return a random u32 in the given range
+pub fn rand(min: u32, max: u32) u32 {
+    return ((xorshift32() & 0xFFFF) * (max - min) + min);
+}
+
+/// return a random f32 in the given range
+pub fn frand(min: f32, max: f32) f32 {
+    const float = @as(f32, @floatFromInt(xorshift32() & 0xFFFF)) / 0x10000; 
+    return float * (max - min) + min;
+}
+
 test "math" {
     _ = Vector;
     _ = Matrix;
