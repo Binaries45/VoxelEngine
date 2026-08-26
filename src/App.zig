@@ -28,7 +28,9 @@ pub fn deinit(app: *App) void {
 }
 
 pub fn step(app: *App) void {
-    _ = ecs.progress(app.world, 0);
+    const continue_run = ecs.progress(app.world, 0);
+    if (continue_run) return;
+    app.should_quit = true;
 }
 
 pub fn run(app: *App) !void {
