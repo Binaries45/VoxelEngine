@@ -19,11 +19,8 @@ pub const state = struct {
     var pip: sg.Pipeline = .{};
     var rx: f32 = 0.0;
     var ry: f32 = 0.0;
-    const view: math.fMat4 = Matrix.lookat(
-        .{0.0, 1.5, 6.0}, 
-        @splat(0.0),
-        .{0.0, 1.0, 0.0}
-    );
+    var pass_action: sg.PassAction = .{};
+    const view: math.fMat4 = Matrix.lookat(.{ 0.0, 1.5, 6.0 }, @splat(0.0), .{ 0.0, 1.0, 0.0 });
 };
 
 pub export fn init() void {
@@ -41,6 +38,11 @@ pub export fn init() void {
         .usage = .{ .index_buffer = true },
         .data = sg.asRange(Mesh.cube.indices.?),
     });
+
+    state.pass_action.colors[0] = .{
+        .load_action = .CLEAR,
+        .clear_value = .{ .r = 0.1, .g = 0.1, .b = 0.2, .a = 1.0 },
+    };
 
     // create a shader and pipeline object
     state.pip = sg.makePipeline(.{
@@ -68,7 +70,7 @@ pub export fn init() void {
 
 pub export fn frame() void {
     // default pass-action clears to grey
-    sg.beginPass(.{ .swapchain = sglue.swapchain() });
+    sg.beginPass(.{ .action = state.pass_action, .swapchain = sglue.swapchain() });
     sg.applyPipeline(state.pip);
     sg.applyBindings(state.bind);
     const dt: f32 = @floatCast(sapp.frameDuration() * 60);
@@ -91,7 +93,6 @@ fn computeVsParams(rx: f32, ry: f32) shd.VsParams {
     const model = Matrix.mul(rxm, rym);
     const aspect = sapp.widthf() / sapp.heightf();
     const proj = Matrix.perspective(60.0, aspect, 0.01, 10.0);
-    const mvp = Matrix.mul(Matrix.mul(proj, state.view), model); 
+    const mvp = Matrix.mul(Matrix.mul(proj, state.view), model);
     return shd.VsParams{ .mvp = @bitCast(mvp) };
 }
-
