@@ -56,19 +56,29 @@ pub fn build(b: *std.Build) !void {
 
     // BUILD SHADERS ----------------------------
     const buildShader = shader_build.buildShader;
-    exe.step.dependOn(try buildShader(b, .{
-        .input = "src/shaders/triangle.glsl",
-        .output = "src/shaders/triangle.glsl.zig",
-        .reflection = true,
-        .shdc_dep = b.dependency("shdc", .{}),
-        .slang = .{
-            .glsl410 = true,
-            .metal_macos = true,
-            .hlsl5 = true,
-            .wgsl = true,
-            .spirv_vk = true,  
-        },
-    })); 
+
+    const shaders: []const []const u8 = &.{
+        "triangle",
+        "cube",
+    };
+
+    for (shaders) |s| {
+        exe.step.dependOn(try buildShader(b, .{
+            .input = b.fmt("src/shaders/{s}.glsl", .{s}),
+            .output = b.fmt("src/shaders/{s}.glsl.zig", .{s}),
+            .reflection = true,
+            .shdc_dep = b.dependency("shdc", .{}),
+            .slang = .{
+                .glsl410 = true,
+                .metal_macos = true,
+                .hlsl5 = true,
+                .wgsl = true,
+                .spirv_vk = true,  
+            },
+        }
+        )); 
+    }
+
     // ------------------------------------------
 
     const run_step = b.step("run", "Run the app");

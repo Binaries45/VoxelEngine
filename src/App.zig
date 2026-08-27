@@ -11,6 +11,7 @@ const slog = sokol.log;
 const App = @This();
 
 alloc: std.mem.Allocator,
+should_quit: bool = false,
 world: *ecs.world_t,
 
 /// global app pointer
@@ -47,9 +48,10 @@ pub fn run(app: *App) !void {
         .init_cb = pipeline.init,
         .frame_cb = tick,
         .cleanup_cb = pipeline.cleanup,
+        // TODO : window options
         .width = 1920,
         .height = 1080,
-        .depth_format = .NONE,
+        .depth_format = .DEPTH,
         .icon = .{ .sokol_default = true },
         .window_title = "triangle.zig",
         .logger = .{ .func = slog.func },

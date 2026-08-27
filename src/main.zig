@@ -10,8 +10,8 @@ pub fn main(init: std.process.Init) !void {
     defer app.deinit();
     app.addPlugin(rendering);
 
-    const triangle = app.newEntity("triangle");
-    app.set(triangle, Mesh, Mesh.triangle);
+    const cube = app.newEntity("cube");
+    app.set(cube, Mesh, Mesh.cube);
     try app.run();
 
     // TODO : spawn cube mesh

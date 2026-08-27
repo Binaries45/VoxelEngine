@@ -18,6 +18,7 @@ pub fn Mat(C: comptime_int, R: comptime_int, T: type) type {
 
 /// returns info on the type of M if M is a matrix type, otherwise returns null
 fn matInfo(M: type) ?type {
+    // TODO : compile error instead of null
     const c = if (@typeInfo(M) == .array) @typeInfo(M).array else return null;
     const v = if (@typeInfo(c.child) == .vector) @typeInfo(c.child).vector else return null;
 
@@ -161,7 +162,74 @@ fn mulAdd(v0: anytype, v1: anytype, v2: anytype) @TypeOf(v0, v1, v2) {
     return v0 * v1 + v2;
 }
 
-// todo : matrix from quaternion
+pub fn lookat(eye: Vec(3, f32), center: Vec(3, f32), up: Vec(3, f32)) Mat(4, 4, f32) {
+    var res = zero(4, 4, f32);
+
+    const f = Vector.normalize(center - eye);
+    const s = Vector.normalize(Vector.cross(f, up));
+    const u = Vector.cross(s, f);
+
+    res[0][0] = s[0];
+    res[0][1] = u[0];
+    res[0][2] = -f[0];
+
+    res[1][0] = s[1];
+    res[1][1] = u[1];
+    res[1][2] = -f[1];
+
+    res[2][0] = s[2];
+    res[2][1] = u[2];
+    res[2][2] = -f[2];
+
+    res[3][0] = -Vector.dot(s, eye);
+    res[3][1] = -Vector.dot(u, eye);
+    res[3][2] = Vector.dot(f, eye);
+    res[3][3] = 1.0; 
+
+    return res;
+}
+
+/// return a perspective matrix from the given parameters
+pub fn perspective(fov: f32, aspect: f32, near: f32, far: f32) Mat(4, 4, f32) {
+    const M = Mat(4, 4, f32);
+    var res = identity(M);
+    const t = std.math.tan(fov * (std.math.pi / 360.0));
+    
+    res[0][0] = 1.0 / t;
+    res[1][1] = aspect / t;
+    res[2][3] = -1.0;
+    res[2][2] = (near + far) / (near - far);
+    res[3][2] = (2.0 * near * far) / (near - far);
+    res[3][3] = 0.0; 
+    
+    return res;
+}
+
+/// TODO : meaningful comment 
+pub fn rotate(T: type, angle: f32, uniform: Vec(3, T)) Mat(4, 4, T) {
+    const M = Mat(4, 4, T);
+
+    var res = identity(M);
+
+    const axis = Vector.normalize(uniform);
+    const sin_theta = std.math.sin(std.math.degreesToRadians(angle));
+    const cos_theta = std.math.cos(std.math.degreesToRadians(angle));
+    const cos_value = 1.0 - cos_theta;
+
+    res[0][0] = (axis[0] * axis[0] * cos_value) + cos_theta;
+    res[0][1] = (axis[0] * axis[1] * cos_value) + (axis[2] * sin_theta);
+    res[0][2] = (axis[0] * axis[2] * cos_value) - (axis[1] * sin_theta);
+    res[1][0] = (axis[1] * axis[0] * cos_value) - (axis[2] * sin_theta);
+    res[1][1] = (axis[1] * axis[1] * cos_value) + cos_theta;
+    res[1][2] = (axis[1] * axis[2] * cos_value) + (axis[0] * sin_theta);
+    res[2][0] = (axis[2] * axis[0] * cos_value) + (axis[1] * sin_theta);
+    res[2][1] = (axis[2] * axis[1] * cos_value) - (axis[0] * sin_theta);
+    res[2][2] = (axis[2] * axis[2] * cos_value) + cos_theta;
+
+    return res; 
+}
+
+// TODO : matrix from quaternion
 
 test "matrix transpose" {
     const m: Mat(3, 4, f32) = .{
