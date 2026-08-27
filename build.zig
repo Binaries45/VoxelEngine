@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const shader_build = @import("./src/rendering/shader_builder.zig");
 
 // todo : build as library (for when things are working)
@@ -24,11 +25,15 @@ pub fn build(b: *std.Build) !void {
     // idk if this is needed for others,
     // but I get a fuck ton of linker errors on my machine
     // when not linking these explicitly
-    mod.linkSystemLibrary("asound", .{});
-    mod.linkSystemLibrary("GL", .{});
-    mod.linkSystemLibrary("X11", .{});
-    mod.linkSystemLibrary("Xi", .{});
-    mod.linkSystemLibrary("Xcursor", .{});
+
+    
+    if (builtin.os.tag == .linux) {
+        mod.linkSystemLibrary("asound", .{});
+        mod.linkSystemLibrary("GL", .{});
+        mod.linkSystemLibrary("X11", .{});
+        mod.linkSystemLibrary("Xi", .{});
+        mod.linkSystemLibrary("Xcursor", .{});
+    }
 
     const dep_sokol = b.dependency("sokol", .{
         .target = target,
