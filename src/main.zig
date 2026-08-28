@@ -20,9 +20,4 @@ pub fn main(init: std.process.Init) !void {
         .rotation = .{0.0, 0.0, 0.0, 0.0}
     });
     try app.run();
-
-    // TODO : spawn cube mesh
-    //        spawn camera
-    //        run app and render
-    //        also add rendering plugin that handles the above
 }

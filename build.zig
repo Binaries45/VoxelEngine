@@ -2,7 +2,6 @@ const std = @import("std");
 const builtin = @import("builtin");
 const shader_build = @import("./src/rendering/shader_builder.zig");
 
-// todo : build as library (for when things are working)
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -40,6 +39,7 @@ pub fn build(b: *std.Build) !void {
     mod.addImport("sokol", mod_sokol);
     // ------------------------------------------
 
+    // todo : build as library (for when things are working)
     const exe = b.addExecutable(.{
         .name = "VoxelEngine",
         .root_module = b.createModule(.{

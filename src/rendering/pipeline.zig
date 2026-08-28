@@ -20,7 +20,11 @@ pub const state = struct {
     var rx: f32 = 0.0;
     var ry: f32 = 0.0;
     var pass_action: sg.PassAction = .{};
-    const view: math.fMat4 = Matrix.lookat(.{ 0.0, 1.5, 6.0 }, @splat(0.0), .{ 0.0, 1.0, 0.0 });
+    const view: math.fMat4 = Matrix.lookat(
+        .{ 0.0, 1.5, 6.0 }, 
+        @splat(0.0), 
+        .{ 0.0, 1.0, 0.0 }
+    );
 };
 
 pub export fn init() void {
