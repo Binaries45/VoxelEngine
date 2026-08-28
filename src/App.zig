@@ -13,14 +13,18 @@ const App = @This();
 alloc: std.mem.Allocator,
 should_quit: bool = false,
 world: *ecs.world_t,
+/// the id of the entity storing all resources/singletons
+resources: ecs.entity_t,
 
 /// global app pointer
 var app_ptr: ?*App = null;
 
 pub fn init(alloc: std.mem.Allocator) App {
+    const world = ecs.init();
     return .{
         .alloc = alloc,
-        .world = ecs.init(),
+        .world = world,
+        .resources = ecs.new_entity(world, "resources"),
     };
 }
 
@@ -68,6 +72,30 @@ pub fn addTags(app: *App, comptime tags: anytype) void {
     inline for (tags) |T| ecs.TAG(app.world, T);
 }
 
+/// add a resource to the ecs with the given value
+pub fn addResource(app: *App, T: type, val: T) void {
+    _ = ecs.set(app.world, app.resources, T, val);
+}
+
+/// get the value of some resource
+pub fn getResource(app: *App, T: type) ?*const T {
+    return ecs.get(app.world, app.resources, T);
+}
+
+/// get a mutable pointer to some resource
+pub fn getResourceMut(app: *App, T: type) ?*T {
+    return ecs.get_mut(app.world, app.resources, T);
+}
+
+/// remove a resource
+pub fn removeResource(app: *App, T: type) void {
+    ecs.remove(app.world, app.resources, T);
+}
+
+pub fn hasResource(app: *App, T: type) bool {
+    return ecs.has_id(app.world, app.resources, ecs.id(T));
+}
+
 /// add the given systems to the ecs
 pub fn addSystem(app: *App, name: [*:0]const u8, phase: ecs.entity_t, comptime fn_system: anytype) void {
     _ = ecs.ADD_SYSTEM(app.world, name, phase, fn_system);
@@ -107,4 +135,9 @@ pub fn has(app: *App, entity: u64, T: type) bool {
 /// get the value of a component for the given entity
 pub fn get(app: *App, entity: u64, T: type) ?*const T {
     return ecs.get(app.world, entity, T);
+}
+
+/// get a mutable pointer to the value of a component for the given entity
+pub fn getMut(app: *App, entity: u64, T: type) ?*T {
+    return ecs.get_mut(app.world, entity, T);
 }
