@@ -2,10 +2,17 @@ const std = @import("std");
 const helpers = @import("helpers.zig");
 
 /// returns a vector of size N containing elements of type T
-pub inline fn Vec(N: comptime_int, T: type) type {
+pub fn Vec(N: comptime_int, T: type) type {
     if (N > 4) @compileError("Vectors cannot have length exceeding 4");
     if (!helpers.isScalar(T)) @compileError("Element type must be an integer or float");
     return @Vector(N, T);
+}
+
+/// returns type info on the vector V
+pub fn vecInfo(V: type) std.builtin.Type.Vector {
+    const VI = @typeInfo(V);
+    if (VI != .vector) @compileError(@typeName(V) ++ " is not a vector type");
+    return VI.vector;
 }
 
 /// compute the dot product of two vectors
@@ -41,13 +48,6 @@ pub fn cross(a: anytype, b: anytype) @TypeOf(a, b) {
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
     };
-}
-
-/// returns type info on the vector V
-pub fn vecInfo(V: type) std.builtin.Type.Vector {
-    const VI = @typeInfo(V);
-    if (VI != .vector) @compileError(@typeName(V) ++ " is not a vector type");
-    return VI.vector;
 }
 
 /// create a new vector from the given one by reordering or duplicating elements
