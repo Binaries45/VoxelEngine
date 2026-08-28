@@ -22,11 +22,6 @@ pub fn build(b: *std.Build) !void {
     // ------------------------------------------
 
     // SOKOL ------------------------------------
-    // idk if this is needed for others,
-    // but I get a fuck ton of linker errors on my machine
-    // when not linking these explicitly
-
-    
     if (builtin.os.tag == .linux) {
         mod.linkSystemLibrary("asound", .{});
         mod.linkSystemLibrary("GL", .{});
