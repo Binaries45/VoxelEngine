@@ -5,6 +5,7 @@ pub const ecs = @import("zflecs");
 
 // MODULES --------------------------------------
 pub const math = @import("math.zig");
+pub const voxel_storage = @import("voxel_storage.zig");
 // ----------------------------------------------
 
 // Component Types ------------------------------

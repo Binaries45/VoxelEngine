@@ -13,8 +13,12 @@ const fMat4 = math.fMat4;
 const Vertex = @import("Vertex.zig");
 const Mesh = @import("Mesh.zig");
 
+// TODO : pipeline component for the renderer resource
+
 /// global renderer state
 pub const state = struct {
+    // TODO : maybe a list of meshes to draw?
+    var mesh: Mesh = .cube;
     var bind: sg.Bindings = .{};
     var pip: sg.Pipeline = .{};
     var rx: f32 = 0.0;
@@ -35,12 +39,13 @@ pub export fn init() void {
 
     // create vertex buffer with triangle vertices
     state.bind.vertex_buffers[0] = sg.makeBuffer(.{
-        .data = sg.asRange(Mesh.cube.vertices),
+        .data = sg.asRange(state.mesh.vertices),
     });
 
     state.bind.index_buffer = sg.makeBuffer(.{
         .usage = .{ .index_buffer = true },
-        .data = sg.asRange(Mesh.cube.indices.?),
+        // TODO : if indices == null, dont init this buffer
+        .data = sg.asRange(state.mesh.indices.?),
     });
 
     state.pass_action.colors[0] = .{
@@ -82,7 +87,8 @@ pub export fn frame() void {
     state.ry += 2.0 * dt;
     const vs_params = computeVsParams(state.rx, state.ry);
     sg.applyUniforms(shd.UB_vs_params, sg.asRange(&vs_params));
-    sg.draw(0, Mesh.cube.indices.?.len, 1);
+    // TODO : if there are no indices use vertices.len instead
+    sg.draw(0, @intCast(state.mesh.indices.?.len), 1);
     sg.endPass();
     sg.commit();
 }

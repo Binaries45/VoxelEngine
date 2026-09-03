@@ -2,9 +2,9 @@
 const App = @import("App.zig");
 
 const TransformPlugin = @import("plugins/Transform.zig");
-const RedneringPlugin = @import("rendering.zig");
+const RenderingPlugin = @import("rendering.zig");
 
 pub fn build(app: *App) void {
     app.addPlugin(TransformPlugin);
-    app.addPlugin(RedneringPlugin);
+    app.addPlugin(RenderingPlugin);
 }

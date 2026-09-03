@@ -7,4 +7,5 @@ pub const pipeline = @import("rendering/pipeline.zig");
 
 pub fn build(app: *App) void {
     app.addComponents(.{ Mesh });
+    // TODO : add pipeline resource once its ready
 }
