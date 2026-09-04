@@ -7,6 +7,11 @@ const DefaultPlugins = ve.DefaultPlugins;
 const Mesh = ve.Mesh;
 const Transform = ve.Transform;
 
+// TODO : find a home for this stuff ------------
+const SVO = @import("sparse_voxel_octree.zig");
+// ----------------------------------------------
+
+
 // TODO : 
 //      switch to world resource, this will provide the necessary rendering code to use
 //          - for example, an svo will give its own render impl, 
@@ -18,7 +23,9 @@ const Transform = ve.Transform;
 pub fn main(init: std.process.Init) !void {
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
-    app.addPlugin(DefaultPlugins); 
+    app.addPlugin(DefaultPlugins);
+    app.addComponents(.{ SVO });
+    app.addResource(SVO, try SVO.init(app.alloc));
 
     const cube = app.newEntity("cube");
     app.set(cube, Mesh, Mesh.cube);
