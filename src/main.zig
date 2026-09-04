@@ -13,6 +13,7 @@ const Transform = ve.Transform;
 //            and if we want maybe we will switch to svdag which will
 //            also have its own impl, making each world a drop in replacement
 //      get a better renderer api (this will likely come as a part of the above idea)
+//      voxels wont be entities anymore, instead entities will simply be rendered as voxels
 
 pub fn main(init: std.process.Init) !void {
     var app = ve.App.init(init.arena.allocator());
