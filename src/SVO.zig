@@ -8,6 +8,8 @@ const SVO = @This();
 
 alloc: Allocator,
 nodes: ArrayList(Node),
+/// edge length of the world in voxels (must be a power of 2)
+size: u32,
 
 pub const Node = struct {
     /// mask of all children which contain a voxel, 
@@ -16,6 +18,7 @@ pub const Node = struct {
     /// index into the SVO world, indicating the start of its child payload
     /// the data will be in the range base..(base + children.popcount)
     base: u32 = 0,
+    is_leaf: bool = false,
     // TODO : material / voxel type for this node
 };
 

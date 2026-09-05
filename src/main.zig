@@ -8,9 +8,9 @@ const Mesh = ve.Mesh;
 const Transform = ve.Transform;
 
 // TODO : find a home for this stuff ------------
-const SVO = @import("sparse_voxel_octree.zig");
+const SVO = @import("SVO.zig");
+const VoxelGrid = @import("VoxelGrid.zig");
 // ----------------------------------------------
-
 
 // TODO : 
 //      switch to world resource, this will provide the necessary rendering code to use
@@ -24,15 +24,8 @@ pub fn main(init: std.process.Init) !void {
     var app = ve.App.init(init.arena.allocator());
     defer app.deinit();
     app.addPlugin(DefaultPlugins);
-    app.addComponents(.{ SVO });
-    app.addResource(SVO, try SVO.init(app.alloc));
+    app.addComponents(.{ VoxelGrid });
+    app.addResource(VoxelGrid, try VoxelGrid.init(app.alloc, 16));
 
-    const cube = app.newEntity("cube");
-    app.set(cube, Mesh, Mesh.cube);
-    app.set(cube, Transform, Transform {
-        .translation = .{0.0, 0.0, 0.0},
-        .scale = .{1.0, 1.0, 1.0},
-        .rotation = .{0.0, 0.0, 0.0, 0.0}
-    });
     try app.run();
 }
