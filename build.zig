@@ -9,7 +9,15 @@ pub fn build(b: *std.Build) !void {
     const mod = b.addModule("VoxelEngine", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
+        .optimize = optimize,
     });
+
+    // EXPOSE SHADER BUILD ----------------------
+    _ =  b.addModule("shader_builder", .{
+        .root_source_file = b.path("src/rendering/shader_builder.zig"),
+        .target = target,
+    }); 
+    // ------------------------------------------
 
     // ECS --------------------------------------
     const zflecs = b.dependency("zflecs", .{
@@ -60,6 +68,7 @@ pub fn build(b: *std.Build) !void {
     const shaders: []const []const u8 = &.{
         "triangle",
         "cube",
+        "grid_raycast",
     };
 
     for (shaders) |s| {
