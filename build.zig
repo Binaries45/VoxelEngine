@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const shader_build = @import("./src/rendering/shader_builder.zig");
+
+pub const shader_builder = @import("./src/rendering/shader_builder.zig");
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -9,15 +10,7 @@ pub fn build(b: *std.Build) !void {
     const mod = b.addModule("VoxelEngine", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
-        .optimize = optimize,
     });
-
-    // EXPOSE SHADER BUILD ----------------------
-    _ =  b.addModule("shader_builder", .{
-        .root_source_file = b.path("src/rendering/shader_builder.zig"),
-        .target = target,
-    }); 
-    // ------------------------------------------
 
     // ECS --------------------------------------
     const zflecs = b.dependency("zflecs", .{
@@ -63,7 +56,7 @@ pub fn build(b: *std.Build) !void {
     b.installArtifact(exe);
 
     // BUILD SHADERS ----------------------------
-    const buildShader = shader_build.buildShader;
+    const buildShader = shader_builder.buildShader;
 
     const shaders: []const []const u8 = &.{
         "triangle",
