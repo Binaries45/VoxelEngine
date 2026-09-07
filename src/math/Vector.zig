@@ -15,6 +15,20 @@ pub fn vecInfo(V: type) std.builtin.Type.Vector {
     return VI.vector;
 }
 
+pub fn toArray(v: anytype) [vecInfo(@TypeOf(v)).len]vecInfo(@TypeOf(v)).child {
+    const I = vecInfo(@TypeOf(v));
+    const T = [I.len]I.child;
+    return @as(T, v);
+}
+
+/// convert an array with fixed size into a vector
+pub fn fromArray(a: anytype) Vec(@typeInfo(@TypeOf(a)).array.len, @typeInfo(@TypeOf(a)).array.child) {
+    const I = @typeInfo(@TypeOf(a)).array;
+    if (I.len > 4) @compileError("array cannot have more than 4 elements");
+    const T = Vec(I.len, I.child);
+    return @as(T, a);
+}
+
 /// compute the dot product of two vectors
 pub inline fn dot(a: anytype, b: anytype) vecInfo(@TypeOf(a, b)).child {
     const AI = vecInfo(@TypeOf(a));
@@ -58,6 +72,25 @@ pub inline fn swizzle(v: anytype, comptime mask: [vecInfo(@TypeOf(v)).len]i32) @
 // todo : scalar ops, increase / decrease dimensions
 
 // todo : write tests
+
+test "to array" {
+    const v: Vec(3, f32) = .{ 1, 2, 3 };
+    const a = toArray(v);
+    try std.testing.expect(@TypeOf(a) == [3]f32);
+    try std.testing.expect(a[0] == 1.0);
+    try std.testing.expect(a[1] == 2.0);
+    try std.testing.expect(a[2] == 3.0);
+}
+
+test "from array" {
+    const a: [3]f32 = .{ 1, 2, 3 };
+    const v = fromArray(a);
+    try std.testing.expect(@TypeOf(v) == Vec(3, f32));
+    try std.testing.expect(v[0] == 1.0);
+    try std.testing.expect(v[1] == 2.0);
+    try std.testing.expect(v[2] == 3.0);
+}
+
 test "vector dot product" {
     const a = Vec(3, i32){ 1, 0, 0 };
     const b = Vec(3, i32){ 0, 1, 0 };
