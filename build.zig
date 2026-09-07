@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+// TODO ; bundle sokol-zig and shdc with the engine, to keep all build stuff in sync
 pub const shader_builder = @import("./src/rendering/shader_builder.zig");
 
 pub fn build(b: *std.Build) !void {
